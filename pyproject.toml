@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chatsite"
 dynamic = ["version"]
-description = "ChatSite package scaffold."
+description = "ChatSite package scaffold with a truthful CLI tree."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-dependencies = ["click>=8.0", "chatstyle>=0.1.0,<0.2.0", "chatenv>=0.2.0,<0.3.0"]
+dependencies = ["click>=8.0", "chatenv>=0.2.0,<0.3.0"]
 authors = [{name = "ChatArch", email = "1073853456@qq.com"}]
 keywords = ["chatsite", "chatarch", "cli"]
 classifiers = [
@@ -18,8 +18,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ChatArch/chatsite"
-Repository = "https://github.com/ChatArch/chatsite"
+Homepage = "https://github.com/ChatArch/ChatSite"
+Repository = "https://github.com/ChatArch/ChatSite"
+Documentation = "https://arch.gh.wzhecnu.cn/ChatSite/"
 
 [project.scripts]
 chatsite = "chatsite.cli:main"
@@ -29,6 +30,7 @@ chatsite = "chatsite.config"
 
 [project.optional-dependencies]
 dev = ["build", "pytest", "twine"]
+docs = ["mkdocs>=1.6,<2.0", "mkdocs-material>=9.5,<10.0", "mkdocs-static-i18n>=1.2,<2.0", "mike>=2.0,<3.0"]
 
 [tool.setuptools.dynamic]
 version = {attr = "chatsite.__version__"}

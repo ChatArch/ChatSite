@@ -2,9 +2,9 @@
 
 ## CLI Rules
 
-- Use `chatstyle>=0.1.0,<0.2.0` and `chatenv>=0.2.0,<0.3.0` as the canonical CLI interaction runtime.
-- Prefer `CommandSchema`, `CommandField`, `add_interactive_option()`, and `resolve_command_inputs()` for new commands.
-- Missing required args should auto-enter interactive mode when recoverable.
+- Current root-only commands use Click plus the ChatEnv provider entry point; add bounded `chatstyle` dependencies only when a real interactive command needs them.
+- Prefer reusable Python APIs before CLI wiring for new site capabilities.
+- Missing required args should auto-enter interactive mode only when recoverable and explicitly designed.
 - `-i` forces interactive mode; `-I` disables prompting and must fail fast.
 - Prompt defaults must match actual execution defaults.
 - Sensitive values must stay masked in prompts and summaries.
