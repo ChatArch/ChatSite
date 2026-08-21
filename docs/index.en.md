@@ -8,7 +8,7 @@
 
     ---
 
-    Inspect the current real command surface: [`chatsite --tree`](cli-tree.md).
+    Inspect the current real command surface: [`chatsite --tree` / `chatsite --tree-brief`](cli-tree.md).
 
 -   :material-web: **Site Boundary**
 
@@ -20,7 +20,7 @@
 
     ---
 
-    `--tree`, README, MkDocs, and tests must stay synchronized.
+    `--tree`, `--tree-brief`, README, MkDocs, and tests must stay synchronized.
 
 </div>
 
@@ -30,6 +30,7 @@
 pip install chatsite
 chatsite --version
 chatsite --tree
+chatsite --tree-brief
 ```
 
 ## Development Verification

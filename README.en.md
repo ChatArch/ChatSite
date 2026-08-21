@@ -25,6 +25,7 @@ English | [简体中文](README.md)
 pip install chatsite
 chatsite --version
 chatsite --tree
+chatsite --tree-brief
 ```
 
 Development environment:
@@ -39,11 +40,14 @@ python -m build
 ## CLI Tree
 
 ```text
-chatsite  # ChatSite package scaffold for site workflows
-├── --help  # show command help
-├── --version  # show the installed package version
-└── --tree  # show this CLI tree
+chatsite
+├── --help  # Show this message and exit.
+├── --version  # Show the version and exit.
+├── --tree  # Print the registered CLI tree and exit.
+└── --tree-brief  # Print the registered CLI tree without parameter signatures and exit.
 ```
+
+The current public surface has root options only, so the full and brief trees are identical. When real commands gain parameters, `--tree` retains their signatures while `--tree-brief` omits them.
 
 `chatsite hello` is not public CLI; it is a scaffold example leftover and must fail.
 
@@ -55,4 +59,4 @@ chatsite  # ChatSite package scaffold for site workflows
 
 ## Development Notes
 
-Read `DEVELOP.md` and `AGENTS.md` before expanding commands, and keep `--tree`, README, MkDocs, tests, and changelog synchronized.
+Read `DEVELOP.md` and `AGENTS.md` before expanding commands, and keep `--tree`, `--tree-brief`, README, MkDocs, tests, and changelog synchronized.

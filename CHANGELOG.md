@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-22 - 0.1.2
+
+### Changed
+
+- Replaced the package-local CLI tree renderer with ChatStyle's registered Click renderer and added `chatsite --tree-brief`.
+- Aligned runtime dependencies with `chatstyle>=0.2.0,<0.3.0` and `chatenv>=0.2.10,<0.3.0`, with typed ChatEnv provider and storage-path coverage.
+- Expanded CI across Python 3.10-3.12 with installed CLI, wheel, and Twine checks.
+
 ## 2026-08-12 - 0.1.1
 
 ### Changed
