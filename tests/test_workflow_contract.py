@@ -27,6 +27,12 @@ def test_docs_workflows_use_chatarch_site_url():
     assert "github.io" not in preview
     assert "mkdocs gh-deploy --force" in deploy
     assert "mkdocs build --strict" in ci
+    assert 'python-version: ["3.10", "3.11", "3.12"]' in ci
+    assert "chatsite --version" in ci
+    assert "chatsite --tree" in ci
+    assert "chatsite --tree-brief" in ci
+    assert "python -m twine check dist/*" in ci
+    assert "python -m pip install --force-reinstall dist/*.whl" in ci
 
 
 def test_mkdocs_material_renderer_and_public_domain():

@@ -8,7 +8,7 @@
 
     ---
 
-    查看当前真实命令面：[`chatsite --tree`](cli-tree.md)。
+    查看当前真实命令面：[`chatsite --tree` / `chatsite --tree-brief`](cli-tree.md)。
 
 -   :material-web: **站点边界**
 
@@ -20,7 +20,7 @@
 
     ---
 
-    `--tree`、README、MkDocs 和测试必须同步更新。
+    `--tree`、`--tree-brief`、README、MkDocs 和测试必须同步更新。
 
 </div>
 
@@ -30,6 +30,7 @@
 pip install chatsite
 chatsite --version
 chatsite --tree
+chatsite --tree-brief
 ```
 
 ## 开发验证
