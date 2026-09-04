@@ -17,7 +17,7 @@
 
 # ChatSite
 
-`ChatSite` 是 ChatArch 站点工作流方向的 Python CLI 包壳。当前公开 CLI 只提供真实 root-only 包信息入口；后续新增站点能力时，必须同步 Python API、CLI 树、文档和测试。
+`ChatSite` 是 ChatArch / Chat 系列的 Web 与 service 入口。它从模板包壳开始演进：CLI 仍保持真实 root-only 包信息入口，Web feature 则在这里集成各 Chat 工具能力；例如 Overleaf 编辑页面由 ChatSite serve，并调用 ChatOL 作为 Overleaf 工具模块。后续新增站点能力时，必须同步 Python API、服务入口、文档和测试。
 
 ## 快速开始
 

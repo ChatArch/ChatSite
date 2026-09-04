@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChatSite Overleaf Editor</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main id="loginView" class="login-view">
+    <section class="login-card">
+      <p class="eyebrow">ChatSite Overleaf</p>
+      <h1>Overleaf editing cockpit</h1>
+      <p class="lede">A focused chat workspace for listing projects, editing TeX files, and compiling Overleaf output.</p>
+      <form id="loginForm" class="stack">
+        <label>Email <input id="loginEmail" type="email" autocomplete="username" value="rexwzh@lookeng.cn"></label>
+        <label>Password <input id="loginPassword" type="password" autocomplete="current-password"></label>
+        <button class="primary" type="submit">Enter workspace</button>
+        <p id="loginError" class="error"></p>
+      </form>
+    </section>
+  </main>
+
+  <main id="appView" class="app-view hidden">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">ChatSite / Overleaf</p>
+        <h1>Conversational LaTeX editing</h1>
+      </div>
+      <div class="top-actions">
+        <span id="userBadge" class="badge"></span>
+        <button id="settingsButton" class="ghost" type="button">Settings</button>
+        <button id="logoutButton" class="ghost" type="button">Logout</button>
+      </div>
+    </header>
+
+    <section class="workspace">
+      <aside class="rail">
+        <div class="panel-title">
+          <span>Conversations</span>
+          <button id="newConversationButton" class="mini" type="button">New</button>
+        </div>
+        <div id="conversationList" class="list compact-list"></div>
+
+        <div class="panel-title projects-title">
+          <span>Projects</span>
+          <button id="refreshProjectsButton" class="mini" type="button">Refresh</button>
+        </div>
+        <div id="projectList" class="list project-list"></div>
+      </aside>
+
+      <section class="chat-panel">
+        <div id="messages" class="messages"></div>
+        <form id="chatForm" class="chat-form">
+          <textarea id="chatInput" rows="3" placeholder="Ask ChatSite to inspect, edit, or compile the selected Overleaf file..."></textarea>
+          <button class="primary" type="submit">Send</button>
+        </form>
+      </section>
+
+      <aside class="editor-panel">
+        <div class="panel-title">
+          <span>File editor</span>
+          <button id="compileButton" class="mini" type="button">Compile</button>
+        </div>
+        <div class="select-row">
+          <select id="fileSelect"><option value="">Select a project first</option></select>
+          <button id="reloadFileButton" class="mini" type="button">Reload</button>
+        </div>
+        <textarea id="editor" class="editor" spellcheck="false" placeholder="Open a TeX file from the project list."></textarea>
+        <div class="editor-actions">
+          <span id="fileStatus" class="muted">No file selected</span>
+          <button id="saveFileButton" class="primary" type="button">Save to Overleaf</button>
+        </div>
+        <div id="compileStatus" class="compile-status"></div>
+        <iframe id="pdfFrame" class="pdf-frame hidden" title="Compiled PDF preview"></iframe>
+      </aside>
+    </section>
+  </main>
+
+  <dialog id="settingsDialog" class="settings-dialog">
+    <form id="settingsForm" method="dialog" class="settings-card">
+      <div class="panel-title">
+        <div>
+          <p class="eyebrow">Connection settings</p>
+          <h2>Overleaf and model access</h2>
+        </div>
+        <button id="closeSettingsButton" class="ghost" type="button">Close</button>
+      </div>
+      <label>Overleaf endpoint <input id="settingOverleafBaseUrl" placeholder="http://127.0.0.1:8090"></label>
+      <label>Overleaf email <input id="settingOverleafEmail" type="email"></label>
+      <label>Overleaf password <input id="settingOverleafPassword" type="password" placeholder="Leave blank to keep current secret"></label>
+      <label>Session cookie <input id="settingOverleafSession" type="password" placeholder="Optional; leave blank to keep current secret"></label>
+      <label>Cookie name <input id="settingOverleafCookieName" placeholder="overleaf_session2"></label>
+      <label>OpenAI model <input id="settingOpenAIModel" placeholder="gpt-4.1-mini"></label>
+      <label>OpenAI API key <input id="settingOpenAIKey" type="password" placeholder="Leave blank to keep current secret"></label>
+      <div class="secret-row">
+        <span id="secretSummary" class="muted"></span>
+        <button id="testOverleafButton" class="mini" type="button">Test Overleaf</button>
+      </div>
+      <button class="primary" type="submit">Save settings</button>
+      <p id="settingsStatus" class="muted"></p>
+    </form>
+  </dialog>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

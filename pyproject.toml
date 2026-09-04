@@ -28,6 +28,7 @@ Documentation = "https://arch.gh.wzhecnu.cn/ChatSite/"
 
 [project.scripts]
 chatsite = "chatsite.cli:main"
+chatsite-overleaf-web = "chatsite.overleaf_web:main"
 
 [project.entry-points."chatenv.configs"]
 chatsite = "chatsite.config"
@@ -35,6 +36,7 @@ chatsite = "chatsite.config"
 [project.optional-dependencies]
 dev = ["build", "pytest", "twine"]
 docs = ["mkdocs>=1.6,<2.0", "mkdocs-material>=9.5,<9.7", "mkdocs-static-i18n>=1.2,<2.0", "mike>=2.0,<3.0"]
+overleaf = ["ChatOL>=0.1.2,<0.2.0"]
 
 [tool.setuptools.dynamic]
 version = {attr = "chatsite.__version__"}
@@ -44,3 +46,6 @@ where = ["src"]
 
 [tool.setuptools]
 include-package-data = true
+
+[tool.setuptools.package-data]
+chatsite = ["overleaf_static/*"]

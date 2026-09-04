@@ -17,7 +17,7 @@ English | [简体中文](README.md)
 
 # ChatSite
 
-`ChatSite` is the ChatArch Python CLI package shell for site-oriented workflows. The public CLI currently exposes truthful root-level package information entries only. Future site capabilities must update Python APIs, the CLI tree, docs, and tests together.
+`ChatSite` is the web and service entry point for the ChatArch / Chat series. It starts from the template package shell: the CLI still exposes truthful root-level package information, while web features integrate Chat tool modules here. For example, the Overleaf editor is served by ChatSite and calls ChatOL as the Overleaf tool module. Future site capabilities must update Python APIs, service entry points, docs, and tests together.
 
 ## Quick Start
 

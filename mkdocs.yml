@@ -37,6 +37,7 @@ plugins:
           nav_translations:
             首页: Home
             CLI 树: CLI Tree
+            Overleaf 编辑器: Overleaf Editor
 
 markdown_extensions:
   - admonition
@@ -64,3 +65,4 @@ extra:
 nav:
   - 首页: index.md
   - CLI 树: cli-tree.md
+  - Overleaf 编辑器: overleaf-editor-web.md
