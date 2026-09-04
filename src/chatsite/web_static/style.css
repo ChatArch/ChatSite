@@ -45,12 +45,26 @@ body::before {
 }
 
 .login-card {
+  position: relative;
   width: min(560px, 100%);
   padding: 3rem;
   border: 1px solid var(--line);
   border-radius: 34px;
   background: var(--white);
   box-shadow: var(--shadow);
+}
+
+.hub-login-card {
+  width: min(720px, 100%);
+  background:
+    linear-gradient(145deg, rgba(255, 252, 247, 0.94), rgba(255, 248, 237, 0.82)),
+    radial-gradient(circle at 100% 0%, rgba(81, 107, 79, 0.14), transparent 18rem);
+}
+
+.corner-actions {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }
 
 .eyebrow {
@@ -126,6 +140,12 @@ button {
   padding: 0.68rem 0.9rem;
 }
 
+a.ghost {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+
 .mini { padding: 0.5rem 0.7rem; font-size: 0.73rem; }
 
 button:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -145,8 +165,59 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 
 .topbar h1 { font-size: clamp(1.8rem, 3vw, 3rem); }
+.hub-topbar { align-items: flex-end; }
+.hub-lede { margin: 0.55rem 0 0; }
 .top-actions { display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap; }
 .badge { padding: 0.45rem 0.7rem; border-radius: 999px; color: var(--copper-deep); background: rgba(185, 104, 63, 0.12); }
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1.3fr) repeat(2, minmax(240px, 0.85fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.feature-card {
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  background: rgba(255, 252, 247, 0.8);
+  box-shadow: 0 18px 48px rgba(53, 40, 24, 0.14);
+}
+
+.primary-feature {
+  min-height: 340px;
+  background:
+    linear-gradient(135deg, rgba(39, 59, 42, 0.92), rgba(81, 107, 79, 0.82)),
+    radial-gradient(circle at top right, rgba(255, 250, 242, 0.22), transparent 14rem);
+  color: #fffaf2;
+}
+
+.primary-feature .eyebrow, .primary-feature p { color: rgba(255, 250, 242, 0.82); }
+.primary-feature h2 { font-size: clamp(2rem, 4vw, 3.5rem); }
+.muted-feature p { color: var(--muted); line-height: 1.55; }
+
+.feature-link {
+  margin-top: auto;
+  align-self: flex-start;
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 0.78rem 1rem;
+  color: var(--moss-deep);
+  background: #fffaf2;
+  text-decoration: none;
+  font: 800 0.86rem/1 "Gill Sans", "Trebuchet MS", sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.feature-link.secondary {
+  border: 1px solid var(--line);
+  background: rgba(255, 252, 247, 0.72);
+}
 
 .workspace {
   display: grid;
@@ -192,7 +263,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   font: 700 0.9rem/1.25 "Aptos", "Trebuchet MS", sans-serif;
 }
 .list button.active { border-color: rgba(185, 104, 63, 0.55); background: rgba(185, 104, 63, 0.13); }
-.list button span { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 0.25rem; }
+.list button span, .list button small { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 0.25rem; }
+.case-list button > span { color: var(--ink); font-size: 0.9rem; margin-top: 0; }
+.list button small { font-weight: 500; }
 
 .messages { padding: 1rem; overflow: auto; display: grid; align-content: start; gap: 0.8rem; }
 .message {
@@ -239,6 +312,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 @media (max-width: 1100px) {
   .workspace { grid-template-columns: 280px 1fr; height: auto; min-height: 0; }
   .editor-panel { grid-column: 1 / -1; }
+  .hub-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 760px) {
@@ -248,4 +322,5 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   .chat-form { grid-template-columns: 1fr; }
   .message { max-width: 100%; }
   .login-card { padding: 1.4rem; border-radius: 24px; }
+  .feature-card { min-height: 220px; }
 }

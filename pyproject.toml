@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chatsite"
 dynamic = ["version"]
-description = "ChatSite package scaffold with a truthful CLI tree."
+description = "ChatSite web and service entry point for ChatArch features."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -28,7 +28,7 @@ Documentation = "https://arch.gh.wzhecnu.cn/ChatSite/"
 
 [project.scripts]
 chatsite = "chatsite.cli:main"
-chatsite-overleaf-web = "chatsite.overleaf_web:main"
+chatsite-web = "chatsite.web:main"
 
 [project.entry-points."chatenv.configs"]
 chatsite = "chatsite.config"
@@ -48,4 +48,4 @@ where = ["src"]
 include-package-data = true
 
 [tool.setuptools.package-data]
-chatsite = ["overleaf_static/*"]
+chatsite = ["web_static/*"]
