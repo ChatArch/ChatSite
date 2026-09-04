@@ -131,7 +131,8 @@ class DataStore:
                 id TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
                 created_at REAL NOT NULL,
-                updated_at REAL NOT NULL
+                updated_at REAL NOT NULL,
+                model_response_id TEXT
             );
             CREATE TABLE IF NOT EXISTS messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -144,8 +145,15 @@ class DataStore:
             """
         )
         self.conn.commit()
+        self._migrate()
         with contextlib.suppress(Exception):
             self.db_path.chmod(0o600)
+
+    def _migrate(self) -> None:
+        columns = {row["name"] for row in self.conn.execute("PRAGMA table_info(conversations)").fetchall()}
+        if "model_response_id" not in columns:
+            self.conn.execute("ALTER TABLE conversations ADD COLUMN model_response_id TEXT")
+            self.conn.commit()
 
     def seed_defaults(self) -> None:
         defaults = {
@@ -260,9 +268,24 @@ class DataStore:
 
     def get_conversation(self, conversation_id: str) -> dict[str, Any] | None:
         row = self.conn.execute(
-            "SELECT id, title, created_at, updated_at FROM conversations WHERE id = ?", (conversation_id,)
+            "SELECT id, title, created_at, updated_at, model_response_id FROM conversations WHERE id = ?", (conversation_id,)
         ).fetchone()
         return dict(row) if row else None
+
+    def conversation_response_id(self, conversation_id: str) -> str | None:
+        row = self.conn.execute(
+            "SELECT model_response_id FROM conversations WHERE id = ?", (conversation_id,)
+        ).fetchone()
+        return str(row["model_response_id"]) if row and row["model_response_id"] else None
+
+    def set_conversation_response_id(self, conversation_id: str, response_id: str | None) -> None:
+        if not response_id:
+            return
+        self.conn.execute(
+            "UPDATE conversations SET model_response_id = ?, updated_at = ? WHERE id = ?",
+            (response_id, time.time(), conversation_id),
+        )
+        self.conn.commit()
 
     def add_message(self, conversation_id: str, role: str, content: str) -> dict[str, Any]:
         now = time.time()
@@ -493,11 +516,17 @@ def run_openai_chat(store: DataStore, conversation_id: str, user_text: str, cont
     )
     prompt = f"{current}\n\nRecent conversation:\n{transcript}\n\nCurrent user request:\n{user_text}"
     tools = [_overleaf_tool_schema()]
-    response = _responses_create(store.config.openai_base_url, api_key, {"model": model, "instructions": instructions, "input": prompt, "tools": tools})
+    previous_response_id = store.conversation_response_id(conversation_id)
+    first_payload: dict[str, Any] = {"model": model, "instructions": instructions, "input": prompt, "tools": tools}
+    if previous_response_id:
+        first_payload["previous_response_id"] = previous_response_id
+    response = _responses_create(store.config.openai_base_url, api_key, first_payload)
     for _ in range(5):
         calls = _extract_function_calls(response)
         if not calls:
-            return _extract_output_text(response) or "Done."
+            final_text = _extract_output_text(response) or "Done."
+            store.set_conversation_response_id(conversation_id, response.get("id"))
+            return final_text
         outputs = []
         for call in calls:
             tool_result = handle_overleaf_tool(store, call.get("arguments") or {})
@@ -507,7 +536,9 @@ def run_openai_chat(store: DataStore, conversation_id: str, user_text: str, cont
             api_key,
             {"model": model, "previous_response_id": response.get("id"), "input": outputs, "tools": tools},
         )
-    return _extract_output_text(response) or "I used the Overleaf tool, but the model did not produce a final response."
+    final_text = _extract_output_text(response) or "I used the Overleaf tool, but the model did not produce a final response."
+    store.set_conversation_response_id(conversation_id, response.get("id"))
+    return final_text
 
 
 def handle_overleaf_tool(store: DataStore, arguments: dict[str, Any] | str) -> dict[str, Any]:

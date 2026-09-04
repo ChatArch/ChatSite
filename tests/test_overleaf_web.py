@@ -41,6 +41,13 @@ def test_overleaf_web_settings_redact_secrets(monkeypatch, tmp_path):
     assert "overleaf_password" not in settings
     assert "openai_api_key" not in settings
 
+    first = store.create_conversation("first")
+    second = store.create_conversation("second")
+    store.set_conversation_response_id(first["id"], "resp_first")
+    store.set_conversation_response_id(second["id"], "resp_second")
+    assert store.conversation_response_id(first["id"]) == "resp_first"
+    assert store.conversation_response_id(second["id"]) == "resp_second"
+
 
 def test_overleaf_web_rejects_unsafe_remote_paths():
     pytest.importorskip("chatol", reason="ChatOL optional extra is not installed")

@@ -15,20 +15,24 @@ web application.
 - New root-level text file creation through ChatOL upload.
 - Project compile with authenticated PDF/log artifact preview.
 - Conversation history with one OpenAI Responses API tool named `overleaf`.
+- Per-conversation OpenAI Responses API state: each conversation stores its own
+  `previous_response_id` chain so model/tool context is isolated across chats.
 
 ## Runtime Boundary
 
 ChatSite owns:
 
 - HTTP serving and static assets
-- Login/session management
+- shared-site login/session management using the public account documented in
+  `/home/zhihong/Playground/SITES.md`
 - user-facing Settings
 - conversation state
 - service deployment and nginx/public entry
 
 ChatOL owns:
 
-- Overleaf login/session bootstrap
+- Overleaf login/session bootstrap using Overleaf tool credentials from Settings
+  or the private Overleaf deployment env
 - project/file workflow primitives
 - compile/download APIs
 - Overleaf-specific data models and errors
