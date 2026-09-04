@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added ChatSite's first feature service: `chatsite-overleaf-web`, a login-protected Overleaf editing page that calls ChatOL as a tool module and supports project/file browsing, OT-based doc saves, compile previews, Settings, and an OpenAI Responses API chat loop.
+- Added `chatsite-web`, a login-protected ChatSite hub for ChatArch/Chat-series feature pages. The first feature is an Overleaf editor that calls ChatOL as a tool module and supports project/file browsing, OT-based doc saves, compile previews, Settings, and an OpenAI Responses API chat loop.
 
 ## 2026-08-22 - 0.1.2
 

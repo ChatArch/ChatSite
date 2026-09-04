@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChatSite | ChatArch 系列入口</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main id="loginView" class="login-view">
+    <section class="login-card hub-login-card">
+      <div class="corner-actions">
+        <button id="languageToggleLogin" class="ghost" type="button">EN</button>
+      </div>
+      <p class="eyebrow" data-i18n="hubEyebrow">ChatSite / ChatArch 系列</p>
+      <h1 data-i18n="hubLoginTitle">ChatArch 工作台</h1>
+      <p class="lede" data-i18n="hubLoginLede">ChatSite 是 ChatArch / Chat 系列的统一 Web 入口。使用已配置的站点账号登录后，可以进入各个功能工作区。</p>
+      <form id="loginForm" class="stack">
+        <label><span data-i18n="emailLabel">邮箱</span><input id="loginEmail" type="email" autocomplete="username"></label>
+        <label><span data-i18n="passwordLabel">密码</span><input id="loginPassword" type="password" autocomplete="current-password"></label>
+        <button class="primary" type="submit" data-i18n="enterChatSite">进入 ChatSite</button>
+        <p id="loginError" class="error"></p>
+      </form>
+    </section>
+  </main>
+
+  <main id="appView" class="app-view hidden">
+    <header class="topbar hub-topbar">
+      <div>
+        <p class="eyebrow" data-i18n="hubEyebrow">ChatSite / ChatArch 系列</p>
+        <h1>ChatSite</h1>
+        <p class="lede hub-lede" data-i18n="hubLede">统一承载 ChatArch 工具、工作流和协作功能的服务入口。</p>
+      </div>
+      <div class="top-actions">
+        <button id="languageToggle" class="ghost" type="button">EN</button>
+        <span id="userBadge" class="badge"></span>
+        <button id="logoutButton" class="ghost" type="button" data-i18n="logout">退出</button>
+      </div>
+    </header>
+
+    <section class="hub-grid">
+      <article class="feature-card primary-feature">
+        <p class="eyebrow" data-i18n="featureEyebrow">功能 01</p>
+        <h2 data-i18n="overleafTitle">Overleaf 编辑器</h2>
+        <p data-i18n="overleafDesc">通过 ChatOL 调用 Overleaf：浏览项目、编辑 TeX、编译 PDF/log，并为每个对话隔离模型上下文。</p>
+        <a class="feature-link" href="/overleaf" data-i18n="openOverleaf">打开 Overleaf 工作区</a>
+      </article>
+
+      <article class="feature-card muted-feature">
+        <p class="eyebrow" data-i18n="casesEyebrow">可运行案例</p>
+        <h2 data-i18n="casesTitle">上线后可直接验证</h2>
+        <p data-i18n="casesDesc">进入 Overleaf 工作区后，可以一键打开 Smoke Test 的 main.tex、编译项目，并填入真实编辑提示。</p>
+        <a class="feature-link secondary" href="/overleaf" data-i18n="runCases">进入案例</a>
+      </article>
+
+      <article class="feature-card muted-feature">
+        <p class="eyebrow" data-i18n="serviceMapEyebrow">服务地图</p>
+        <h2 data-i18n="sitesTitle">ChatArch Sites</h2>
+        <p data-i18n="sitesDesc">服务清单、public/local 入口和可用性状态由部署工作区与 ChatGlance 维护。</p>
+        <a class="feature-link secondary" href="https://glance.public.wzhecnu.cn/sites" data-i18n="openSites">打开站点看板</a>
+      </article>
+    </section>
+  </main>
+
+  <script src="/static/hub.js"></script>
+</body>
+</html>

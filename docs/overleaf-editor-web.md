@@ -1,4 +1,4 @@
-# Overleaf Editor Web Feature
+# ChatSite Web and Overleaf Feature
 
 ChatSite is the web/service entry point for the Chat series. The Overleaf editor
 feature lives here and calls ChatOL as a tool module; ChatOL does not serve the
@@ -6,7 +6,8 @@ web application.
 
 ## What It Provides
 
-- A browser login page for the ChatSite Overleaf workspace.
+- A browser login page for the ChatSite hub.
+- An `/overleaf` feature workspace for Overleaf editing.
 - Server-side Settings for the Overleaf endpoint, Overleaf credentials/session,
   OpenAI model, and OpenAI API key.
 - Project and file browsing against the configured Overleaf instance.
@@ -23,8 +24,7 @@ web application.
 ChatSite owns:
 
 - HTTP serving and static assets
-- shared-site login/session management using the public account documented in
-  `/home/zhihong/Playground/SITES.md`
+- configurable login/session management
 - user-facing Settings
 - conversation state
 - service deployment and nginx/public entry
@@ -45,15 +45,15 @@ Required for login:
 
 Recommended for deployment:
 
-- `CHATSITE_WEB_ADMIN_EMAIL`, default `rexwzh@lookeng.cn`
+- `CHATSITE_WEB_ADMIN_EMAIL`, default `admin@example.test`
 - `CHATSITE_WEB_HOST`, default `127.0.0.1`
 - `CHATSITE_WEB_PORT`, default `18082`
-- `CHATSITE_WEB_DATA_DIR`, default `~/.local/share/chatsite-overleaf-web`
+- `CHATSITE_WEB_DATA_DIR`, default `~/.chatarch/chatsite`
 - `CHATSITE_OVERLEAF_DEFAULT_URL`, default `http://127.0.0.1:8090`
 - `CHATSITE_OVERLEAF_ENV_FILE`, points at an existing private Overleaf `.env`
 - `OPENAI_API_KEY` or `CHATSITE_OPENAI_API_KEY`
 - `OPENAI_BASE_URL`, default `https://api.openai.com/v1`
-- `OPENAI_MODEL` or `CHATSITE_WEB_OPENAI_MODEL`, default `gpt-4.1-mini`
+- `OPENAI_MODEL` or `CHATSITE_WEB_OPENAI_MODEL`, default `gpt-5.5`
 
 Do not commit passwords, session cookies, API keys, or deployment `.env` files.
 
@@ -62,5 +62,5 @@ Do not commit passwords, session cookies, API keys, or deployment `.env` files.
 ```bash
 PYTHONPATH=/path/to/ChatSite/src:/path/to/ChatOL/src \
 CHATSITE_WEB_ADMIN_PASSWORD_FILE=/path/to/admin-password \
-python3 -m chatsite.overleaf_web --host 127.0.0.1 --port 18082
+python3 -m chatsite.web --host 127.0.0.1 --port 18082
 ```
