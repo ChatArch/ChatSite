@@ -156,7 +156,7 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
         build = os.getenv("CHATSITE_TODO_BUILD", "dev")
         if not re.fullmatch(r"[0-9a-f]{7,40}", build):
             build = "dev"
-        return {"ok": True, "service": "chattodo", "version": __version__, "build": build, "model_configured": config.configured}
+        return {"ok": True, "service": "chattodo", "version": __version__, "build": build, "domain_build": os.getenv("CHATSITE_TODO_BUILD_DOMAIN", "dev"), "model_configured": config.configured}
 
     @app.get("/")
     def index():
