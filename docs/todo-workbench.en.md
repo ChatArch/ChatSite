@@ -4,8 +4,11 @@ The Todo feature belongs to ChatSite. ChatTodo supplies reusable task-forest ope
 
 ## Features
 
-- Pan/zoom canvas with draggable, collapsible task cards.
-- Floating Markdown preview/editor, titles and task status.
+- Left-hand canvas navigation: create, name and switch independent overview/project/idea canvases.
+- Pan/zoom canvas with draggable, collapsible task cards; touch devices support two-finger zoom/pan without accidental node editing.
+- [Storage and integration](todo-data-integration.md) documents both SQLite databases, schemas, revisions, idempotency, Python/HTTP contracts and backup boundaries.
+- Right adds a child; top/bottom insert preceding/following siblings, preserving real relationships and order.
+- Click a title to edit it in place; the separate detail button opens Markdown/PRD. Title-only brainstorming works without filling in any detail.
 - Hideable model conversation panel scoped to the selected branch or the whole board.
 - Private SQLite persistence, atomic batches, revisions, idempotency, history and undo.
 - Structured model edits validated against schema and scope; important changes require confirmation.

@@ -39,6 +39,7 @@ plugins:
             CLI 树: CLI Tree
             Overleaf 编辑器: Overleaf Editor
             Todo 工作台: Todo Workbench
+            数据存储与接入: Data and Integration
 
 markdown_extensions:
   - admonition
@@ -68,3 +69,4 @@ nav:
   - CLI 树: cli-tree.md
   - Overleaf 编辑器: overleaf-editor-web.md
   - Todo 工作台: todo-workbench.md
+  - 数据存储与接入: todo-data-integration.md

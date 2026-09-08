@@ -43,13 +43,9 @@
   <div id="app" hidden>
     <header class="topbar">
       <div class="topbar-main">
+        <button id="canvas-toggle" type="button" class="icon-button" aria-controls="canvas-sidebar" aria-expanded="true" aria-label="显示或收起画布栏" title="显示或收起画布栏">☰</button>
         <div class="brand"><span class="brand-mark" aria-hidden="true">⌘</span><span>ChatTodo</span></div>
-        <span class="separator" aria-hidden="true"></span>
-        <div class="board-switcher">
-          <label class="sr-only" for="board-select">当前任务树</label>
-          <select id="board-select" aria-label="切换任务树"></select>
-          <button id="new-board" type="button" class="icon-button" title="新建任务树" aria-label="新建任务树">＋</button>
-        </div>
+        <span class="workspace-caption">想法与行动，在这里展开</span>
         <div class="main-actions">
           <button id="add-button" type="button" class="primary" title="新建节点；选中节点时添加子任务"><span aria-hidden="true">＋</span><span>新节点</span></button>
           <button id="chat-toggle" type="button" aria-controls="chat-sidebar" aria-expanded="false" title="显示或收起模型对话"><span aria-hidden="true">◫</span><span>模型对话</span></button>
@@ -83,11 +79,19 @@
     </section>
 
     <div id="layout" class="layout chat-hidden">
+      <aside id="canvas-sidebar" class="canvas-sidebar" aria-label="画布导航">
+        <div class="canvas-sidebar-heading"><h2>我的画布</h2><span id="canvas-count">0</span></div>
+        <p class="canvas-sidebar-note">总览、大项目，或一个具体想法。<br>每张画布独立展开。</p>
+        <button id="new-board" type="button" class="new-canvas" title="新建并命名画布">＋ 新建画布</button>
+        <select id="board-select" aria-label="当前画布" tabindex="-1" hidden></select>
+        <nav id="canvas-list" class="canvas-list" aria-label="切换画布"></nav>
+        <p class="canvas-sidebar-footer">先搭框架，再逐步深入。<br>只写标题，也是一张完整的思维导图。</p>
+      </aside>
       <main id="canvas" class="canvas" aria-label="任务树画布" tabindex="0">
         <div class="canvas-heading">
           <p class="eyebrow">任务画布</p>
           <h1 id="canvas-title">任务树</h1>
-          <p class="canvas-description">展开任务，随时回到全局。</p>
+          <p class="canvas-description">先写标题、搭框架，再和模型一起展开。</p>
         </div>
         <div id="scene" class="scene">
           <svg id="edges" class="edges" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
@@ -95,8 +99,8 @@
         </div>
         <div id="canvas-empty" class="canvas-empty" role="status">
           <span class="empty-mark" aria-hidden="true">＋</span>
-          <h2>从一个任务开始</h2>
-          <p>点击上方「新节点」写下目标，<br>再把它逐步拆成可以行动的步骤。</p>
+          <h2>从一个想法开始</h2>
+          <p>从左侧新建画布，写下节点标题。<br>细节可以稍后补充，也可以交给模型展开。</p>
         </div>
         <div class="canvas-bottom">
           <div class="zoom-tools" role="group" aria-label="画布视图">
@@ -106,7 +110,7 @@
             <span class="separator" aria-hidden="true"></span>
             <button id="fit" type="button" class="icon-button" title="适应全部节点" aria-label="适应全部节点">⛶</button>
           </div>
-          <p class="canvas-hint">拖动平移 · 滚轮缩放 · 点击节点查看内容</p>
+          <p class="canvas-hint">点击改标题 · 右侧加子节点 · 上下加同级 · 详情可选</p>
           <div class="legend" aria-label="任务状态图例">
             <span data-status="pending"><i aria-hidden="true"></i>待开始</span>
             <span data-status="in_progress"><i aria-hidden="true"></i>进行中</span>
@@ -129,7 +133,7 @@
           <div class="detail-tabs" role="tablist" aria-label="节点内容模式">
             <button id="tab-preview" type="button" class="active" role="tab" aria-selected="true" aria-controls="preview-panel">预览</button>
             <button id="tab-edit" type="button" role="tab" aria-selected="false" aria-controls="edit-panel">编辑</button>
-            <span>Markdown 内容</span>
+            <span>可选 · Markdown 内容</span>
           </div>
           <div class="detail-body">
             <div id="preview-panel" role="tabpanel" aria-labelledby="tab-preview">
@@ -151,7 +155,7 @@
               </div>
               <div class="field body-field">
                 <label for="node-body-input">内容 <span class="muted">支持 Markdown</span></label>
-                <textarea id="node-body-input" spellcheck="false" placeholder="写下目标、上下文与实施步骤…" rows="10"></textarea>
+                <textarea id="node-body-input" spellcheck="false" placeholder="可选：补充想法、PRD 或实施步骤；也可以暂时留空。" rows="10"></textarea>
               </div>
             </div>
           </div>

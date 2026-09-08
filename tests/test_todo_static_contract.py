@@ -31,6 +31,17 @@ def test_entry_and_complete_controls_exist():
     } <= ids
 
 
+def test_named_canvas_sidebar_and_optional_detail_copy():
+    source=(ROOT / "index.html").read_text()
+    page=Page(source)
+    ids={attrs.get("id") for _,attrs in page.tags}
+    assert {"canvas-sidebar","canvas-list","canvas-toggle","canvas-count","new-board"} <= ids
+    assert "新建画布" in source
+    assert "可选" in source
+    assert "只写标题" in source
+    assert source.count('id="new-board"')==1
+
+
 def test_csp_and_local_asset_contract():
     assert (ROOT / "index.html").exists()
     source = (ROOT / "index.html").read_text()

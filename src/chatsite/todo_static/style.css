@@ -110,6 +110,23 @@ h1, h2, h3 { line-height: 1.4; }
 
 /* Canvas coordinates and its SVG share one transform origin. */
 .layout { position: relative; display: flex; flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
+.workspace-caption { color: var(--muted); font-size: 11px; }
+#canvas-toggle { border-color: transparent; color: #69829b; font-size: 17px; }
+.canvas-sidebar { z-index: 22; flex: 0 0 220px; width: 220px; min-height: 0; display: flex; flex-direction: column; padding: 24px 14px 18px; background: #f9fbfd; border-right: 1px solid var(--border); }
+.canvases-hidden .canvas-sidebar { display: none; }
+.canvas-sidebar-heading { display: flex; align-items: center; justify-content: space-between; padding: 0 8px; }
+.canvas-sidebar-heading h2 { margin: 0; font-size: 13px; font-weight: 600; }
+#canvas-count { color: #7b8b9b; font-size: 11px; border-radius: 5px; background: #edf1f5; padding: 1px 6px; }
+.canvas-sidebar-note { padding: 10px 8px 18px; color: #7d8b99; font-size: 11px; line-height: 1.9; }
+.canvas-sidebar .new-canvas { width: 100%; justify-content: flex-start; color: var(--blue-dark); border: 1px dashed #bed4e7; background: #f4f9ff; font-size: 12px; padding: 9px 12px; }
+.canvas-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; margin-top: 18px; }
+.canvas-item { display: flex; align-items: flex-start; flex-direction: column; flex-shrink: 0; gap: 5px; min-width: 0; padding: 12px; border-color: transparent; background: transparent; white-space: normal; text-align: left; }
+.canvas-item[aria-current="page"] { border-color: #cbe1f5; background: #eaf4ff; color: #235f94; }
+.canvas-item-title { font-size: 12px; font-weight: 600; width: 100%; overflow-wrap: anywhere; }
+.canvas-item small { color: #8995a1; font-size: 10px; }
+.canvas-sidebar-footer { margin-top: 18px; padding: 14px 8px 0; border-top: 1px solid #e8edf2; font-size: 10px; color: #8b98a4; line-height: 1.9; }
+@media (max-width: 1100px) { .workspace-caption { display: none; } .canvas-hint { display: none; } }
+@media (max-width: 899px) { .canvas-sidebar { position: absolute; inset: 0 auto 0 0; width: min(260px,80%); box-shadow: 8px 0 28px #24384d20; } }
 .canvas { position: relative; flex: 1; min-width: 0; height: 100%; overflow: hidden; background-color: var(--bg); background-image: radial-gradient(#d9dde4 .8px, transparent .8px); background-size: 24px 24px; cursor: grab; touch-action: none; }
 .canvas.grabbing, .canvas.dragging { cursor: grabbing; }
 .canvas-heading { position: absolute; top: 25px; left: 28px; max-width: min(65%, 480px); z-index: 2; pointer-events: none; }
@@ -153,9 +170,10 @@ h1, h2, h3 { line-height: 1.4; }
 .strip { flex: 0 0 4px; background: var(--status-color); border-radius: 8px 0 0 8px; margin: -1px 0 -1px -1px; }
 .card-content { min-width: 0; flex: 1; padding: 13px 15px 10px; overflow: hidden; }
 .card-content { position: relative; }
-.card-detail { position: absolute; top: 7px; right: 7px; width: auto; min-height: 22px; padding: 1px 7px; border-color: #d9e2ec; border-radius: 999px; background: #fbfdff; color: #5c7894; font-size: 9px; line-height: 1.5; opacity: 0; visibility: hidden; }
+.card-detail { position: absolute; top: 7px; right: 7px; width: auto; min-height: 24px; padding: 1px 7px; border-color: #e2eaf2; border-radius: 6px; background: #fbfdff; color: #6b8297; font-size: 10px; line-height: 1.5; }
 .card:hover .card-detail, .card:focus-within .card-detail, .card.selected .card-detail { opacity: 1; visibility: visible; }
-.inline-title-input { height: 31px; padding: 4px 8px; font-size: 13px; font-weight: 600; border-radius: 6px; }
+.inline-title-input { width: calc(100% - 40px); height: 31px; padding: 4px 8px; font-size: 13px; font-weight: 600; border-radius: 6px; user-select: text; touch-action: auto; }
+.inline-editing .card-content::after { content: "Enter 保存 · Esc 取消"; position: absolute; left: 15px; bottom: 12px; font-size: 9px; color: #8b99a6; }
 .inline-editing .node-subtitle, .inline-editing .node-meta { display: none; }
 .inline-editing .card-content { padding-top: 10px; }
 .node-add { position: absolute; z-index: 6; width: 24px; min-width: 24px; min-height: 24px; padding: 0; border-radius: 50%; border-color: #b9d7f2; color: var(--blue-dark); background: #fff; font-size: 15px; line-height: 1; box-shadow: 0 2px 7px #24517d18; opacity: 0; visibility: hidden; }
@@ -164,7 +182,7 @@ h1, h2, h3 { line-height: 1.4; }
 .add-before { left: 50%; top: -14px; transform: translateX(-50%); }
 .add-child { right: -16px; top: 40px; }
 .add-after { left: 50%; bottom: -14px; transform: translateX(-50%); }
-.node-title { font-size: 13px; font-weight: 600; line-height: 1.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.node-title { padding-right: 36px; font-size: 13px; font-weight: 600; line-height: 1.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .node-subtitle { margin-top: 5px; color: #7c8793; font-size: 10px; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .node-meta { display: flex; align-items: center; gap: 6px; margin-top: 9px; font-size: 9px; color: #87919d; white-space: nowrap; }
 .node-meta .status, .node-status, .status-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 4px; padding: 1px 5px; color: var(--status-ink, #657384); background: var(--status-soft, #f0f3f6); font-size: 10px; }
@@ -193,7 +211,7 @@ h1, h2, h3 { line-height: 1.4; }
 .detail-tabs > span { margin-left: auto; font-size: 10px; color: #8b96a2; }
 .detail-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 19px 20px 22px; scrollbar-width: thin; }
 #preview-panel { min-height: 140px; }
-#node-preview:empty::before { content: "暂无内容。切换到「编辑」补充目标、说明或实施步骤。"; display: block; margin-top: 13px; color: #7b8794; font-size: 12px; line-height: 1.8; }
+#node-preview:empty::before { content: "详情可以留空。先在画布上写标题、搭框架，需要时再补充 PRD 或其他内容。"; display: block; margin-top: 13px; color: #7b8794; font-size: 12px; line-height: 1.8; }
 #edit-panel .field:last-child { margin-bottom: 0; }
 #node-body-input { min-height: 170px; font-family: var(--font-ui); font-size: 12px; }
 .detail-footer { display: flex; align-items: center; gap: 8px; flex-shrink: 0; padding: 11px 14px; background: #fcfdfe; border-top: 1px solid var(--line); }

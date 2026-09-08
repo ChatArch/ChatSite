@@ -130,5 +130,12 @@
     pendingView(id) {const entry=this.entries.get(id);return entry?.view?copy(entry.view):null;}
     forget(id) {const e=this.entries.get(id);if(e)clearTimeout(e.timer);this.entries.delete(id);}
   }
-  window.TodoCore = {copy,clamp,uuid,statuses,descendants,visibleNodes,normalizeView,zoomAt,changedIds,renderMarkdown,API,APIError,ViewSaver};
+  function pinchView(view, start, current) {
+    const distance=points=>Math.hypot(points[1].x-points[0].x,points[1].y-points[0].y);
+    const center=points=>({x:(points[0].x+points[1].x)/2,y:(points[0].y+points[1].y)/2});
+    const from=center(start),to=center(current);
+    const zoom=clamp(view.zoom*Math.max(1,distance(current))/Math.max(1,distance(start)),.2,2.5);
+    return {zoom,pan:{x:to.x-(from.x-view.pan.x)*zoom/view.zoom,y:to.y-(from.y-view.pan.y)*zoom/view.zoom}};
+  }
+  window.TodoCore = {copy,clamp,uuid,statuses,descendants,visibleNodes,normalizeView,zoomAt,pinchView,changedIds,renderMarkdown,API,APIError,ViewSaver};
 })();

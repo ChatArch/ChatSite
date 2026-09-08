@@ -196,6 +196,50 @@ test('inline title commit patches only title and keeps the detail draft body',as
   assert.equal(c.draft.values.body,'unsaved body');
 });
 
+test('real create callback selects the new blank node and queues its view',async()=>{
+  let c; const writes=[];
+  c=harness({request:async(path,method,payload)=>{
+    writes.push(structuredClone(payload));
+    const added=payload.operations.find(op=>op.op==='create').node;
+    return {board:{...board('a',2),nodes:[node(),added]},change:{id:'created'}};
+  }});
+  c.protectDraft=async()=>true; c.renderAll=()=>{}; let saved=false;
+  c.scheduleView=()=>{saved=true;};
+  const result=await c.addNodeAt('n','child');
+  assert.ok(result,'a committed write must not become a false callback failure');
+  const added=result.board.nodes[1];
+  assert.equal(writes.length,1); assert.equal(added.parent_id,'n'); assert.equal(added.body,'');
+  assert.equal(c.selectedId,added.id); assert.equal(c.inlineTitle.id,added.id);
+  assert.equal(c.detailOpen,false); assert.ok(c.view.positions[added.id]); assert.equal(saved,true);
+});
+
+test('canvas navigation discards neither unsaved inline title nor document without confirmation',async()=>{
+  const c=harness(); c.selectedId='n'; c.inlineTitle={id:'n',value:'not saved',original:'original',baseRevision:1,boardId:'a'};
+  let prompted=false;c.confirm=async()=>{prompted=true;return false;};
+  assert.equal(await c.protectDraft('switch canvas'),false);assert.equal(prompted,true);
+});
+
+test('a clean document snapshot follows server state while unsaved text stays isolated',()=>{
+  const c=harness();c.selectedId='n';c.detailOpen=false;c.makeDraft();
+  c.acceptBoard({...board('a',2),nodes:[{...node(),body:'model body'}]},c.capture());
+  assert.equal(c.draft.values.body,'model body');
+});
+
+test('only the last selected canvas is loaded after out-of-order reads',async()=>{
+  let releaseB,releaseC;
+  const c=harness({request:async(path)=>{
+    if(path.endsWith('/messages'))return {messages:[]};
+    if(path.endsWith('/b'))return await new Promise(resolve=>releaseB=resolve);
+    if(path.endsWith('/c'))return await new Promise(resolve=>releaseC=resolve);
+  }});
+  c.protectDraft=async()=>true;c.renderAll=()=>{};
+  const b=c.loadBoard('b');await new Promise(r=>setTimeout(r,0));
+  const newer=c.loadBoard('c');await new Promise(r=>setTimeout(r,0));
+  releaseC({board:board('c')});await newer;
+  releaseB({board:board('b')});await b;
+  assert.equal(c.board.id,'c');assert.equal(c.messages.length,0);
+});
+
 test('source uses safe DOM sinks and implements lifecycle guards',()=>{
   assert.ok(exists); const source=fs.readFileSync(appPath,'utf8');
   assert.doesNotMatch(source,/\.(innerHTML|outerHTML)\s*=|insertAdjacentHTML|document\.write|localStorage|sessionStorage/);
