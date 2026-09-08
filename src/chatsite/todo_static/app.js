@@ -291,7 +291,7 @@
           input.addEventListener("pointerdown",event=>event.stopPropagation());input.addEventListener("click",event=>event.stopPropagation());
           input.addEventListener("input",event=>{if(this.inlineTitle?.id===node.id)this.inlineTitle.value=event.target.value;});
           input.addEventListener("keydown",event=>{if(event.isComposing)return;if(event.key==="Enter"){event.preventDefault();this.commitTitleEdit(node.id,event.currentTarget.value).catch(error=>this.setError("global-error",error));}else if(event.key==="Escape"){event.preventDefault();this.inlineTitle=null;this.renderBoard();}});
-          input.addEventListener("blur",()=>{if(this._renderingBoard||this.inlineTitle!==edit||edit.saving)return;this.win.setTimeout?.(()=>{if(this.inlineTitle===edit&&input.isConnected&&this.doc.activeElement!==input)this.finishTitleEdit().catch(error=>this.setError("global-error",error));},0);});
+          input.addEventListener("blur",()=>{if(this._renderingBoard||this.inlineTitle!==edit||edit.saving||this.el("modal")?.open)return;this.win.setTimeout?.(()=>{if(this.inlineTitle===edit&&input.isConnected&&this.doc.activeElement!==input&&!this.el("modal")?.open)this.finishTitleEdit().catch(error=>this.setError("global-error",error));},0);});
           content.append(input);
         } else {
           const title=this.doc.createElement("div");title.className="node-title";title.textContent=node.title || "未命名任务";content.append(title);
