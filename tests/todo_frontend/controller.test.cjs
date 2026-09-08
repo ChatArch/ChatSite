@@ -240,6 +240,39 @@ test('only the last selected canvas is loaded after out-of-order reads',async()=
   assert.equal(c.board.id,'c');assert.equal(c.messages.length,0);
 });
 
+test('reading latest state keeps the original retry reachable after an unknown write',async()=>{
+ let patches=0;
+ const c=harness({request:async(path,method,payload)=>{
+   if(method==='PATCH'){patches++;if(patches===1)throw new core.APIError(0,'network','unknown');return {board:board('a',2,'saved')};}
+   return {board:board('a',1)};
+ }});
+ c.renderAll=()=>{};
+ await c.mutate([{op:'update',id:'n',fields:{title:'saved'}}]);
+ const id=c.unresolvedWrite.payload.request_id;
+ await c.refreshBoard();assert.equal(c.unresolvedWrite.payload.request_id,id);assert.ok(c.conflict?.reapply);
+ await c.rebaseConflict();assert.equal(patches,2);assert.equal(c.unresolvedWrite,null);
+});
+
+test('both refresh and late model deletion preserve an unsaved inline title',async()=>{
+ for(const refresh of [false,true]){
+  const c=harness({request:async()=>({board:{...board('a',2),nodes:[]}})});
+  c.renderAll=()=>{};c.selectedId='n';c.makeDraft();
+  c.inlineTitle={id:'n',value:'unsaved title',original:'original',boardId:'a',baseRevision:1};
+  if(refresh)await c.refreshBoard();else c.acceptBoard({...board('a',2),nodes:[]},c.capture());
+  assert.equal(c.draft.values.title,'unsaved title');assert.equal(c.draft.recovered,true);assert.equal(c.detailOpen,true);
+ }
+});
+
+test('navigation rechecks edits made after the outgoing canvas passed its first guard',async()=>{
+ let release;
+ const c=harness({request:async path=>path.endsWith('/messages')?{messages:[]}:await new Promise(r=>release=r)});c.renderAll=()=>{};
+ let prompts=0;c.confirm=async()=>{prompts++;return false;};
+ const pending=c.loadBoard('b');await new Promise(r=>setTimeout(r,0));
+ c.selectedId='n';c.makeDraft();c.inlineTitle={id:'n',value:'typed during load',original:'original',boardId:'a',baseRevision:1};
+ release({board:board('b')});await pending;
+ assert.equal(prompts,1);assert.equal(c.board.id,'a');assert.equal(c.inlineTitle.value,'typed during load');
+});
+
 test('source uses safe DOM sinks and implements lifecycle guards',()=>{
   assert.ok(exists); const source=fs.readFileSync(appPath,'utf8');
   assert.doesNotMatch(source,/\.(innerHTML|outerHTML)\s*=|insertAdjacentHTML|document\.write|localStorage|sessionStorage/);

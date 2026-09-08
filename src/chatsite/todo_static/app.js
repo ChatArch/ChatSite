@@ -165,10 +165,15 @@
       if(this.board?.id===id && !options.force){this.renderBoardList();return;}
       if(this.unresolvedWrite&&this.unresolvedWrite.token?.boardId!==id){this.setError("global-error",new Error("请先核对并重试结果未知的写入，再切换任务树。"));this.renderBoardList();return;}
       if(!options.preserveDraft && !options.discardApproved && !await this.protectDraft("切换任务树会放弃未保存的节点内容，确定继续吗？")) {this.renderBoardList();return;}
-      const prior=this.board?.id;
+      const prior=this.board?.id, guardedEdits=JSON.stringify({draft:this.draft?.values,inline:this.inlineTitle?.value});
       try {
         if(prior) await this.viewSaver.flush(prior);
         const data=await this.api.request(`/api/boards/${encodeURIComponent(id)}`);
+        if(sequence!==this.loadSequence)return;
+        if(this.mutating||this.inlineTitle?.saving||this.unresolvedWrite){this.notice("画布加载期间发生了写入，请完成后再切换。");this.renderBoardList();return;}
+        this.syncDraft();
+        if(guardedEdits!==JSON.stringify({draft:this.draft?.values,inline:this.inlineTitle?.value})&&
+           !await this.protectDraft("画布加载期间产生了新编辑，确定放弃并切换吗？")){this.renderBoardList();return;}
         if(sequence!==this.loadSequence)return;
         if(prior)this.chatDrafts.set(prior,this.el("chat-input").value);
         this.epoch++; this.board=data.board; this.view=this.core.normalizeView(this.board);
@@ -184,12 +189,31 @@
     }
     async refreshBoard() {
       if(!this.board)return; const id=this.board.id, token=this.capture();
-      try {const data=await this.api.request(`/api/boards/${encodeURIComponent(id)}`);if(this.current(token)){if(this.selectedId&&!data.board.nodes.some(node=>node.id===this.selectedId)){if(this.draft?.nodeId===this.selectedId&&isDirty(this.draft)){this.draft={...this.draft,recovered:true};this.editing=true;this.detailOpen=true;this.inlineTitle=null;this.setError("global-error",new Error("当前节点已被删除；未保存内容已保留为只读草稿，请复制后再关闭。"));}else{this.selectedId=null;this.draft=null;this.editing=false;this.detailOpen=false;this.inlineTitle=null;}}this.board=data.board;this.view=this.core.normalizeView(this.board);this.viewSaver.rebase(id,this.board.view_revision);this.conflict=null;this.renderAll();}}
-      catch(error){this.setError("global-error",error);}
+      try {
+        const data=await this.api.request(`/api/boards/${encodeURIComponent(id)}`);
+        if(!this.current(token))return false;
+        this.reconcileDeletedEditor(data.board);
+        this.board=data.board;this.view=this.core.normalizeView(this.board);
+        this.viewSaver.rebase(id,this.board.view_revision);
+        if(!this.unresolvedWrite)this.conflict=null;
+        this.renderAll();return true;
+      } catch(error){this.setError("global-error",error);return false;}
+    }
+    reconcileDeletedEditor(next) {
+      if(!this.selectedId||next.nodes.some(node=>node.id===this.selectedId))return;
+      if(isDirty(this.draft)||this.hasTitleDraft()){
+        const base=this.draft?.base||editable(this.node());
+        const values={...(this.draft?.values||base)};
+        if(this.inlineTitle?.id===this.selectedId&&this.hasTitleDraft())values.title=this.inlineTitle.value;
+        this.draft={boardId:this.board.id,nodeId:this.selectedId,base,values,baseRevision:this.draft?.baseRevision??this.board.revision,recovered:true};
+        this.editing=true;this.detailOpen=true;this.inlineTitle=null;
+        this.setError("global-error",new Error("当前节点已被删除；未保存标题与内容已保留为草稿，请复制后再关闭。"));
+      } else {this.selectedId=null;this.draft=null;this.editing=false;this.detailOpen=false;this.inlineTitle=null;}
     }
     acceptBoard(next, token, options={}) {
       if(!this.current(token) || !next || next.id!==this.board.id || next.revision<=this.board.revision) return false;
       const prior=this.board, oldView=this.view, refreshDraft=!!this.draft&&!isDirty(this.draft)&&!this.editing;
+      this.reconcileDeletedEditor(next);
       this.board=next;
       this.board.view_revision=Math.max(next.view_revision??0,prior.view_revision??0);
       this.viewSaver.rebase(next.id,this.board.view_revision);
@@ -198,12 +222,7 @@
       this.view=normalized;
       if(refreshDraft&&next.nodes.some(n=>n.id===this.selectedId))this.makeDraft();
       if(options.highlight) {this.changed=new Set(this.core.changedIds(prior.nodes,next.nodes));setTimeout(()=>{this.changed.clear();this.renderBoard();},1800);}
-      if(this.selectedId && !next.nodes.some(node=>node.id===this.selectedId)) {
-        if(this.draft?.nodeId===this.selectedId&&isDirty(this.draft)) {
-          this.draft={...this.draft,recovered:true};this.editing=true;this.detailOpen=true;this.inlineTitle=null;
-          this.setError("global-error",new Error("当前节点已被删除；未保存内容已保留为只读草稿，请复制后再关闭。"));
-        } else {this.selectedId=null;this.draft=null;this.editing=false;this.detailOpen=false;this.inlineTitle=null;}
-      }
+
       this.renderAll(); return true;
     }
 
@@ -407,7 +426,7 @@
       finally {this.mutating=false;this.renderControls();this.renderSaveStatus();}
     }
     renderConflict() {const panel=this.el("conflict-panel");if(!panel)return;panel.hidden=!this.conflict;this.el("conflict-message").textContent=this.conflict?.message||"";this.el("conflict-rebase").hidden=!this.conflict?.reapply;}
-    async rebaseConflict() {if(!this.conflict?.reapply)return;const action=this.conflict.reapply;await this.refreshBoard();if(this.conflict===null)await action();}
+    async rebaseConflict() {if(!this.conflict?.reapply)return;const action=this.conflict.reapply;if(await this.refreshBoard())await action();}
 
     scheduleView() {if(this.board&&this.view)this.viewSaver.schedule(this.board.id,this.view,this.board.view_revision);this.renderBoard();}
     zoom(delta, point) {if(!this.view)return;const canvas=this.el("canvas"),r=canvas.getBoundingClientRect(),at=point||{x:r.width/2,y:r.height/2};this.view={...this.view,...this.core.zoomAt(this.view,this.view.zoom*delta,at)};this.scheduleView();}
