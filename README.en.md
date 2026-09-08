@@ -50,7 +50,7 @@ chatsite
     └── serve [--host HOST] [--port PORT] [--profile PROFILE] [--home HOME]  # 启动任务树 Web 服务。
 ```
 
-The current public surface has root options only, so the full and brief trees are identical. When real commands gain parameters, `--tree` retains their signatures while `--tree-brief` omits them.
+The public surface now includes Todo service commands. `--tree` retains parameter signatures while `--tree-brief` omits them.
 
 `chatsite hello` is not public CLI; it is a scaffold example leftover and must fail.
 
