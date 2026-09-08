@@ -44,7 +44,10 @@ chatsite
 ├── --help  # Show this message and exit.
 ├── --version  # Show the version and exit.
 ├── --tree  # Print the registered CLI tree and exit.
-└── --tree-brief  # Print the registered CLI tree without parameter signatures and exit.
+├── --tree-brief  # Print the registered CLI tree without parameter signatures and exit.
+└── todo  # 任务树工作台。
+    ├── check [--profile PROFILE] [--home HOME]  # 验证配置及模型，会发送一次不修改任务的小请求。
+    └── serve [--host HOST] [--port PORT] [--profile PROFILE] [--home HOME]  # 启动任务树 Web 服务。
 ```
 
 The current public surface has root options only, so the full and brief trees are identical. When real commands gain parameters, `--tree` retains their signatures while `--tree-brief` omits them.
@@ -60,3 +63,8 @@ The current public surface has root options only, so the full and brief trees ar
 ## Development Notes
 
 Read `DEVELOP.md` and `AGENTS.md` before expanding commands, and keep `--tree`, `--tree-brief`, README, MkDocs, tests, and changelog synchronized.
+
+
+## Todo workbench
+
+This development branch adds a task canvas, Markdown editing, isolated model conversations, persistence, change receipts and undo. ChatSite serves the Web feature and consumes the corresponding ChatTodo development build. Run `chatsite todo serve` or `chatsite todo check`. Configuration belongs to the `chatsite-todo` ChatEnv provider. The historical PyPI placeholder does not provide this feature.

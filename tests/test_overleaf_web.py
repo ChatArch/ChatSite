@@ -10,7 +10,8 @@ def test_overleaf_web_is_a_chatsite_feature_entrypoint():
 
     assert 'chatsite-web = "chatsite.web:main"' in pyproject
     assert 'overleaf = ["ChatOL>=0.1.2,<0.2.0"]' in pyproject
-    assert 'chatsite = ["web_static/*"]' in pyproject
+    assert '[tool.setuptools.package-data]' in pyproject
+    assert '"web_static/*"' in pyproject
 
 
 def test_overleaf_static_assets_are_checked_in_under_chatsite():
