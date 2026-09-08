@@ -84,8 +84,11 @@ def test_configuration_test_uses_real_protocol_instead_of_models_listing(tmp_pat
     import httpx
     from chatsite.todo_model import ModelClient
     data = values(tmp_path)
-    for name, item in m.TodoWebConfig.get_fields().items():
-        monkeypatch.setattr(item, 'value', data.get(name, item.default))
+    from chatenv import get_paths
+    from chatenv.store import EnvStore
+    home = tmp_path / 'protocol-home'
+    monkeypatch.setenv('CHATARCH_HOME', str(home))
+    EnvStore(get_paths(home).envs_dir).save_active(m.TodoWebConfig, data)
     calls = []
     def generate(self, **kwargs):
         calls.append(kwargs)
@@ -96,6 +99,26 @@ def test_configuration_test_uses_real_protocol_instead_of_models_listing(tmp_pat
     monkeypatch.setattr(httpx, 'Client', unsupported_listing)
     m.TodoWebConfig.test()
     assert len(calls) == 1 and len(calls[0]['board']['nodes']) == 1
+
+
+def test_chatenv_test_loads_active_profile_and_honors_home(tmp_path, monkeypatch):
+    from click.testing import CliRunner
+    from chatenv.cli import cli
+    from chatenv import get_paths
+    from chatenv.store import EnvStore
+    from chatsite.todo_model import ModelClient
+    m = module()
+    home = tmp_path / 'selected-home'
+    EnvStore(get_paths(home).envs_dir).save_active(m.TodoWebConfig, values(tmp_path))
+    calls = []
+    def generate(self, **kwargs):
+        calls.append(kwargs)
+        return {'content': '连接正常', 'operations': [], 'response_id': None}
+    monkeypatch.setattr(ModelClient, 'generate', generate)
+    result = CliRunner().invoke(cli, ['--home', str(home), 'test', '-t', 'chatsite-todo', '-I'])
+    assert result.exit_code == 0, str(result.exception)
+    assert len(calls) == 1
+    assert 'local-test-key' not in result.output and 'local-test-password' not in result.output
 
 
 def test_schema_marks_sensitive_fields():

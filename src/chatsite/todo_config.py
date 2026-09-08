@@ -35,8 +35,11 @@ class TodoWebConfig(BaseEnvConfig):
     @classmethod
     def test(cls) -> None:
         """Run one bounded no-edit request using the configured model protocol."""
-        values = {name: item.value for name, item in cls.get_fields().items()}
-        probe_model(TodoSettings.from_values(values))
+        import click
+        context = click.get_current_context(silent=True)
+        paths = context.obj.get("paths") if context and isinstance(context.obj, dict) else None
+        home = paths.home_dir if paths is not None else None
+        probe_model(TodoSettings.from_profile(home=home))
 
 
 def _url(value: str, *, origin_only: bool = False) -> str:
