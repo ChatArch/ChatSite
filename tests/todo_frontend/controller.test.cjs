@@ -180,7 +180,7 @@ test('directional additions assign readable canvas coordinates and shift sibling
 });
 
 test('selecting card starts inline title edit while detail opens separately',async()=>{
-  const c=harness(); c.protectDraft=async()=>true; c.renderAll=()=>{};
+  const c=harness(); c.protectDraft=async()=>true; c.renderAll=()=>{}; c.renderBoard=()=>{};
   await c.selectNode('n');
   assert.equal(c.selectedId,'n'); assert.equal(c.inlineTitle.id,'n'); assert.equal(c.detailOpen,false);
   await c.openDetail('n');

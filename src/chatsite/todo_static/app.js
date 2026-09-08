@@ -214,6 +214,11 @@
       if(this.board?.id===id)this.status(state==="error"?(result?.status===409?"视图冲突，等待确认重试":"视图保存失败，可继续操作"):state==="saving"?"正在保存视图…":state==="pending"?"视图待保存":"视图已保存");
     }
     renderBoard() {
+      if(this._renderingBoard)return;
+      this._renderingBoard=true;
+      try{this.renderBoardNow();}finally{this._renderingBoard=false;}
+    }
+    renderBoardNow() {
       const host=this.el("nodes"), edges=this.el("edges"), scene=this.el("scene");if(!host||!edges||!scene)return;
       host.replaceChildren();edges.replaceChildren();
       this.el("canvas-title").textContent=this.board?.title || "任务树";
@@ -235,7 +240,6 @@
           input.addEventListener("pointerdown",event=>event.stopPropagation());input.addEventListener("click",event=>event.stopPropagation());
           input.addEventListener("input",event=>{if(this.inlineTitle?.id===node.id)this.inlineTitle.value=event.target.value;});
           input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();this.commitTitleEdit(node.id,event.currentTarget.value).catch(error=>this.setError("global-error",error));}else if(event.key==="Escape"){event.preventDefault();this.inlineTitle=null;this.renderBoard();}});
-          input.addEventListener("blur",event=>this.commitTitleEdit(node.id,event.currentTarget.value).catch(error=>this.setError("global-error",error)));
           content.append(input);
         } else {
           const title=this.doc.createElement("div");title.className="node-title";title.textContent=node.title || "未命名任务";content.append(title);
