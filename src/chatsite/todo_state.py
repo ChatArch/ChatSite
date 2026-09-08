@@ -80,6 +80,10 @@ class WebState:
                     base_revision INTEGER NOT NULL, operations TEXT NOT NULL, summary TEXT NOT NULL,
                     selected_node_id TEXT, created_at REAL NOT NULL, applied INTEGER NOT NULL DEFAULT 0,
                     result TEXT);
+                CREATE TABLE IF NOT EXISTS board_deletions(
+                    owner TEXT NOT NULL, board_id TEXT NOT NULL, state TEXT NOT NULL,
+                    created_at REAL NOT NULL, updated_at REAL NOT NULL,
+                    PRIMARY KEY(owner,board_id));
             """)
 
     @contextmanager
@@ -257,11 +261,34 @@ class WebState:
             db.execute("UPDATE proposals SET applied=1,result=? WHERE id=? AND owner=? AND board_id=?",
                        (_dump(result), proposal_id, owner, board_id))
 
+    def prepare_board_deletion(self, owner: str, board_id: str) -> dict:
+        now = time.time()
+        with self.connection() as db:
+            db.execute("DELETE FROM board_deletions WHERE state='complete' AND updated_at < ?", (now - 86400,))
+            existing = db.execute("SELECT 1 FROM board_deletions WHERE owner=? AND board_id=?",
+                                  (owner, board_id)).fetchone() is not None
+            db.execute("INSERT OR IGNORE INTO board_deletions VALUES(?,?,?,?,?)",
+                       (owner, board_id, "prepared", now, now))
+            result = dict(db.execute("SELECT * FROM board_deletions WHERE owner=? AND board_id=?",
+                                     (owner, board_id)).fetchone())
+            result["existing"] = existing
+            return result
+
+    @staticmethod
+    def _delete_board_state(db, owner: str, board_id: str) -> None:
+        row = db.execute("SELECT id FROM conversations WHERE owner=? AND board_id=?", (owner, board_id)).fetchone()
+        if row:
+            db.execute("DELETE FROM messages WHERE conversation_id=?", (row["id"],))
+        db.execute("DELETE FROM conversations WHERE owner=? AND board_id=?", (owner, board_id))
+        db.execute("DELETE FROM chat_requests WHERE owner=? AND board_id=?", (owner, board_id))
+        db.execute("DELETE FROM proposals WHERE owner=? AND board_id=?", (owner, board_id))
+
+    def complete_board_deletion(self, owner: str, board_id: str) -> None:
+        with self.connection() as db:
+            self._delete_board_state(db, owner, board_id)
+            db.execute("UPDATE board_deletions SET state='complete',updated_at=? WHERE owner=? AND board_id=?",
+                       (time.time(), owner, board_id))
+
     def delete_board_state(self, owner: str, board_id: str) -> None:
         with self.connection() as db:
-            row = db.execute("SELECT id FROM conversations WHERE owner=? AND board_id=?", (owner, board_id)).fetchone()
-            if row:
-                db.execute("DELETE FROM messages WHERE conversation_id=?", (row["id"],))
-            db.execute("DELETE FROM conversations WHERE owner=? AND board_id=?", (owner, board_id))
-            db.execute("DELETE FROM chat_requests WHERE owner=? AND board_id=?", (owner, board_id))
-            db.execute("DELETE FROM proposals WHERE owner=? AND board_id=?", (owner, board_id))
+            self._delete_board_state(db, owner, board_id)

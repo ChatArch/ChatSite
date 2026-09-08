@@ -105,9 +105,10 @@
   }
   class ViewSaver {
     constructor(save, notify, delay=550) {this.save=save;this.notify=notify;this.delay=delay;this.entries=new Map();}
-    schedule(id, view) {
+    schedule(id, view, revision) {
       let entry=this.entries.get(id);
-      if (!entry) {entry={seq:0,done:0,view:null,timer:null,running:null,error:null};this.entries.set(id,entry);}
+      if (!entry) {entry={seq:0,done:0,view:null,revision,timer:null,running:null,error:null};this.entries.set(id,entry);}
+      else if(entry.revision==null&&revision!=null)entry.revision=revision;
       entry.view=copy(view);entry.seq++;entry.error=null;clearTimeout(entry.timer);
       entry.timer=setTimeout(()=>this.flush(id).catch(()=>{}),this.delay);this.notify(id,"pending");
     }
@@ -119,12 +120,14 @@
       entry.running=(async()=>{
         while(entry.seq>entry.done) {
           const seq=entry.seq, view=copy(entry.view);this.notify(id,"saving");
-          try {const result=await this.save(id,view);entry.done=seq;entry.error=null;this.notify(id,entry.seq===seq?"saved":"pending",result);}
+          try {const result=await this.save(id,view,entry.revision);entry.done=seq;entry.error=null;if(result?.view_revision!=null)entry.revision=result.view_revision;this.notify(id,entry.seq===seq?"saved":"pending",result);}
           catch(error) {entry.error=error;this.notify(id,"error",error);throw error;}
         }
       })();
       try {await entry.running;} finally {entry.running=null;}
     }
+    rebase(id, revision) {const entry=this.entries.get(id);if(entry)entry.revision=revision;}
+    pendingView(id) {const entry=this.entries.get(id);return entry?.view?copy(entry.view):null;}
     forget(id) {const e=this.entries.get(id);if(e)clearTimeout(e.timer);this.entries.delete(id);}
   }
   window.TodoCore = {copy,clamp,uuid,statuses,descendants,visibleNodes,normalizeView,zoomAt,changedIds,renderMarkdown,API,APIError,ViewSaver};

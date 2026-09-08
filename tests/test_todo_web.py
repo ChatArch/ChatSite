@@ -100,7 +100,7 @@ def test_mutate_undo_view_import_export_and_delete(tmp_path):
     assert result.json()['change']['counts']['created'] == 1
     assert mutation(client, board, [{'op': 'update', 'id': root, 'fields': {'title': 'stale'}}]).status_code == 409
     view = {'pan': {'x': 20, 'y': 40}, 'zoom': 1.2, 'positions': {'child': {'x': 200, 'y': 120}}, 'collapsed': [root]}
-    assert client.patch('/api/boards/' + board['id'] + '/view', json={'view': view}).status_code == 200
+    assert client.patch('/api/boards/' + board['id'] + '/view', json={'view': view, 'view_revision': board['view_revision']}).status_code == 200
     latest = client.get('/api/boards/' + board['id']).json()['board']
     assert latest['revision'] == changed['revision'] and latest['view'] == view
     exported = client.get('/api/boards/' + board['id'] + '/export').json()
@@ -149,6 +149,59 @@ def test_model_updates_tree_once_and_board_histories_are_isolated(tmp_path):
     assert len(client.get('/api/boards/' + board['id'] + '/messages').json()['messages']) == 2
     other = new_board(client)
     assert client.get('/api/boards/' + other['id'] + '/messages').json()['messages'] == []
+
+
+def test_view_patch_requires_revision_and_rejects_delayed_stale_tab(tmp_path):
+    _, client = environment(tmp_path)
+    login(client)
+    board = new_board(client)
+    path = '/api/boards/' + board['id'] + '/view'
+    assert client.patch(path, json={'view': {'zoom': 1.1}}).status_code == 400
+    first = client.patch(path, json={'view_revision': 0, 'view': {'zoom': 1.2}})
+    assert first.status_code == 200
+    stale = client.patch(path, json={'view_revision': 0, 'view': {'zoom': 0.8}})
+    assert stale.status_code == 409
+    assert stale.json()['error']['code'] == 'view_revision_conflict'
+    assert client.get('/api/boards/' + board['id']).json()['board']['view']['zoom'] == 1.2
+
+
+def test_model_noop_reply_does_not_claim_tree_was_updated(tmp_path):
+    fake = FakeModel(lambda args: [{
+        'op': 'update', 'id': args['board']['nodes'][0]['id'],
+        'fields': {'title': args['board']['nodes'][0]['title']},
+    }])
+    _, client = environment(tmp_path, fake)
+    login(client)
+    board = new_board(client)
+    response = client.post('/api/boards/' + board['id'] + '/chat', json={
+        'message': '保持现状', 'revision': board['revision'], 'request_id': str(uuid.uuid4()),
+    })
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data['change'] is None
+    assert data['board']['revision'] == board['revision']
+    assert not data['message']['content'].startswith('已更新任务树')
+    assert data['message']['content'].startswith('任务树没有发生变化')
+
+
+def test_delete_returns_committed_outcome_when_state_cleanup_fails(tmp_path, monkeypatch):
+    app, client = environment(tmp_path)
+    login(client)
+    board = new_board(client)
+    web = app.state.web_state
+    original = web.complete_board_deletion
+    monkeypatch.setattr(web, 'complete_board_deletion', lambda *_: (_ for _ in ()).throw(RuntimeError('cleanup failed')))
+    payload = {'revision': board['revision'], 'confirm': True}
+    first = client.request('DELETE', '/api/boards/' + board['id'], json=payload)
+    assert first.status_code == 200, first.text
+    assert first.json()['board_deleted'] is True
+    assert first.json()['cleanup_pending'] is True
+    assert client.get('/api/boards/' + board['id']).status_code == 404
+
+    monkeypatch.setattr(web, 'complete_board_deletion', original)
+    recovered = client.request('DELETE', '/api/boards/' + board['id'], json=payload)
+    assert recovered.status_code == 200, recovered.text
+    assert recovered.json()['cleanup_pending'] is False
 
 
 def test_model_dangerous_changes_wait_for_confirmation(tmp_path):

@@ -231,8 +231,8 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
     @app.patch("/api/boards/{board_id}/view")
     async def save_view(board_id: str, request: Request, owner=Depends(require_user)):
         body = await _body(request)
-        _fields(body, {"view"}, {"view"})
-        return boards.save_view(board_id, owner, body["view"])
+        _fields(body, {"view", "view_revision"}, {"view", "view_revision"})
+        return boards.save_view(board_id, owner, body["view"], view_revision=_revision(body["view_revision"]))
 
     @app.post("/api/boards/{board_id}/undo")
     async def undo(board_id: str, request: Request, owner=Depends(require_user)):
@@ -258,7 +258,7 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
         result = boards.create(owner, title=data.get("title", "导入的任务树"), nodes=data["nodes"])
         try:
             if "view" in data:
-                boards.save_view(result["id"], owner, data["view"])
+                boards.save_view(result["id"], owner, data["view"], view_revision=result["view_revision"])
         except BoardError:
             boards.delete(result["id"], owner, result["revision"], confirm=True)
             raise
@@ -268,9 +268,23 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
     async def delete_board(board_id: str, request: Request, owner=Depends(require_user)):
         body = await _body(request)
         _fields(body, {"revision", "confirm"}, {"revision", "confirm"})
-        boards.delete(board_id, owner, _revision(body["revision"]), confirm=_boolean(body, "confirm"))
-        web.delete_board_state(owner, board_id)
-        return {"ok": True}
+        revision, confirm = _revision(body["revision"]), _boolean(body, "confirm")
+        if not confirm:
+            raise BoardError("confirmation_required", "Board deletion requires confirmation.")
+        receipt = web.prepare_board_deletion(owner, board_id)
+        if receipt["state"] != "complete":
+            try:
+                boards.delete(board_id, owner, revision, confirm=confirm)
+            except BoardError as exc:
+                if exc.code != "not_found" or not receipt["existing"]:
+                    raise
+            try:
+                web.complete_board_deletion(owner, board_id)
+            except Exception as exc:
+                LOGGER.error("Todo board state cleanup pending: %s", type(exc).__name__)
+                return {"ok": True, "board_deleted": True, "cleanup_pending": True,
+                        "message": "任务树已删除；关联会话清理待重试。请再次执行删除请求。"}
+        return {"ok": True, "board_deleted": True, "cleanup_pending": False}
 
     @app.get("/api/boards/{board_id}/messages")
     async def messages(board_id: str, owner=Depends(require_user)):
@@ -339,7 +353,8 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
                 mutation = boards.mutate(board_id, owner, generation["base_revision"], "chat_" + request_id,
                                           operations, actor="model", confirm_destructive=False)
                 change = mutation["change"]
-                content = "已更新任务树。\n\n" + generation["content"]
+                content = (("已更新任务树。" if change else "任务树没有发生变化。")
+                           + "\n\n" + generation["content"])
             else:
                 content = generation["content"]
             reply = web.add_message(owner, board_id, "assistant", content, change=change, proposal=proposal, request_id=request_id)

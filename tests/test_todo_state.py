@@ -115,6 +115,18 @@ def test_proposals_are_owner_bound_and_messages_show_applied_receipt(tmp_path):
     assert message['proposal'] is None and message['change']['id'] == 'change-1'
 
 
+def test_board_deletion_receipt_survives_until_cleanup_completes(tmp_path):
+    state = store(tmp_path)
+    state.add_message('owner', 'board', 'user', 'private draft')
+    first = state.prepare_board_deletion('owner', 'board')
+    assert first['state'] == 'prepared' and first['existing'] is False
+    assert module().WebState(state.path).prepare_board_deletion('owner', 'board')['existing'] is True
+
+    state.complete_board_deletion('owner', 'board')
+    assert state.prepare_board_deletion('owner', 'board')['state'] == 'complete'
+    assert state.messages('owner', 'board') == []
+
+
 def test_symlink_database_is_rejected(tmp_path):
     target = tmp_path / 'target'
     target.write_text('do not overwrite')
