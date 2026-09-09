@@ -288,6 +288,11 @@ class WebState:
         if type(revision) is not int or revision < 0:
             raise StateError("bad_revision", "revision 必须是非负整数")
         with self.connection() as db:
+            # Serialize the lifecycle check with deletion cleanup in this same DB.
+            retired = db.execute("SELECT 1 FROM board_deletions WHERE owner=? AND board_id=? AND state='complete'",
+                                 (owner, board_id)).fetchone()
+            if retired:
+                raise StateError("not_found", "画布已删除", 404)
             row = db.execute("SELECT layout,revision FROM presentations WHERE owner=? AND board_id=?",
                              (owner, board_id)).fetchone()
             current = dict(row) if row else {"layout": "logicalStructure", "revision": 0}
@@ -327,8 +332,10 @@ class WebState:
     def complete_board_deletion(self, owner: str, board_id: str) -> None:
         with self.connection() as db:
             self._delete_board_state(db, owner, board_id)
-            db.execute("UPDATE board_deletions SET state='complete',updated_at=? WHERE owner=? AND board_id=?",
-                       (time.time(), owner, board_id))
+            now = time.time()
+            db.execute("INSERT INTO board_deletions VALUES(?,?,?,?,?) "
+                       "ON CONFLICT(owner,board_id) DO UPDATE SET state='complete',updated_at=excluded.updated_at",
+                       (owner, board_id, "complete", now, now))
 
     def delete_board_state(self, owner: str, board_id: str) -> None:
         with self.connection() as db:
