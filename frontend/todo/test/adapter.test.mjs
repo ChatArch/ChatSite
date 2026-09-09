@@ -13,7 +13,8 @@ test('native adapter commits unthrottled text before host actions',()=>{
 });
 
 test('native expand commands also publish view state',()=>{
-  assert.match(map,/original\(name,\.\.\.args\).*SET_NODE_EXPAND.*emitView\(\)/s);
+  assert.match(map,/original\(name,\.\.\.args\).*SET_NODE_EXPAND.*emitView\(true\)/s);
+  assert.match(map,/persistCollapse===true.*mergeCollapsed/s);
 });
 
 test('native back and forward delegate to authoritative host history',()=>{
