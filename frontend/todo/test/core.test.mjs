@@ -93,6 +93,35 @@ test('an overlong-title 400 can be corrected and saved with a new attempt',async
   assert.equal(q.ack.nodes[0].title,'short');assert.notEqual(requests[0].request_id,requests[1].request_id);
 });
 
+test('confirmed conflict retry preserves unrelated server nodes and fields',async()=>{
+  const sent=[];let calls=0;
+  const initial=board(1,[n('root',null,0,'old')]);
+  const remote=board(2,[{...n('root',null,0,'old'),body:'remote body'},n('foreign','root',0,'remote child')]);
+  const q=new SemanticQueue(initial,async(_id,payload)=>{sent.push(payload);if(++calls===1)throw Object.assign(new Error('conflict'),{status:409});return {board:{...remote,revision:3,nodes:remote.nodes.map(x=>x.id==='root'?{...x,title:'mine'}:x)}};});
+  q.edit([n('root',null,0,'mine')]);await assert.rejects(q.flush());q.observe(remote);await q.retry();
+  assert.deepEqual(sent[1].operations,[{op:'update',id:'root',fields:{title:'mine'}}]);
+  assert.equal(q.ack.nodes.find(x=>x.id==='foreign').title,'remote child');
+});
+
+test('retrying an unknown receipt never regresses an observed newer board',async()=>{
+  let calls=0;
+  const initial=board(1,[n('root',null,0,'old')]);
+  const receipt=board(2,[n('root',null,0,'mine')]);
+  const q=new SemanticQueue(initial,async()=>{if(++calls===1)throw Object.assign(new Error('lost'),{status:0});return {board:receipt};});
+  q.edit(receipt.nodes);await assert.rejects(q.flush());
+  q.observe(board(3,[...receipt.nodes,n('foreign','root',0,'remote child')]));await q.retry();
+  assert.equal(q.ack.revision,3);assert.ok(q.board.nodes.some(x=>x.id==='foreign'));
+});
+
+test('edits during a rebased save remain delta-only',async()=>{
+  let calls=0,release;const sent=[];
+  const remoteNodes=[n('root',null,0,'old'),n('foreign','root',0,'remote child')];
+  const q=new SemanticQueue(board(1),async(_id,payload)=>{sent.push(payload);calls++;if(calls===1)throw Object.assign(new Error('conflict'),{status:409});if(calls===2)await new Promise(r=>release=r);return {board:board(calls+1,remoteNodes.map(x=>x.id==='root'?{...x,title:calls===2?'first':'second'}:x))};});
+  q.edit([n('root',null,0,'first')]);await assert.rejects(q.flush());q.observe(board(2,remoteNodes));
+  const pending=q.retry();await new Promise(r=>setTimeout(r,0));q.edit([n('root',null,0,'second')]);release();await pending;
+  assert.deepEqual(sent[2].operations,[{op:'update',id:'root',fields:{title:'second'}}]);
+});
+
 test('stale result from an old board cannot publish into the active board',async()=>{
   let release;const seen=[];
   const q=new SemanticQueue(board(),async()=>await new Promise(r=>release=r),b=>seen.push(b.id));
