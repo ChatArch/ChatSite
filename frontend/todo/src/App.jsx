@@ -3,7 +3,7 @@ import {ConfigProvider,Input,Modal,Select} from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import MapEditor,{layouts} from './Map.jsx';
 import Chat from './Chat.jsx';
-import {API,CasQueue,NavigationGate,ScopedDrafts,SemanticQueue,SingleFlight,UndoRedo,clone,isAmbiguousWriteError,isBoardScopeCurrent,isDraftDirty,rootsOf,uuid} from './core.mjs';
+import {API,CasQueue,NavigationGate,ScopedDrafts,SemanticQueue,SingleFlight,UndoRedo,clone,isAmbiguousWriteError,isBoardScopeCurrent,isDraftDirty,mergeChatMessages,rootsOf,uuid} from './core.mjs';
 import './style.css';
 
 const statusText={saved:'已保存',dirty:'待保存',saving:'保存中…',error:'结果尚未确认'};
@@ -31,7 +31,7 @@ export default function App(){
   function reconcileDetail(next){const draft=detailRef.current;if(!draft||draft.boardId!==next.id||next.nodes.some(n=>n.id===draft.nodeId))return;if(JSON.stringify(draft.values)!==JSON.stringify(draft.base)){const recovered={...draft,recovered:true};detailRef.current=recovered;setDetail(recovered);setError('目标节点已不存在，未保存的正文已保留，请复制后关闭。');}else{detailRef.current=null;setDetail(null);setSelected(null);}}
   function accept(next,{discard=false,semanticChange=false}={}){reconcileDetail(next);if(!semantic.current||semantic.current.board.id!==next.id){semantic.current=makeSemantic(next);setSaveState('saved');}else semantic.current.start(next,discard);if(semanticChange)historyController.semanticChanged();boardRef.current=next;setBoard(next);const roots=rootsOf(next.nodes);setRootId(current=>roots.some(r=>r.id===current)?current:roots[0]?.id||null);}
   async function listBoards(){const data=await api.request('boards');setBoards(data.boards||[]);return data.boards||[];}
-  async function loadMessages(id,token){const data=await api.request(`boards/${encodeURIComponent(id)}/messages`);if(token===epoch.current&&boardRef.current?.id===id)setMessages(data.messages||[]);}
+  async function loadMessages(id,token){const data=await api.request(`boards/${encodeURIComponent(id)}/messages`);if(token===epoch.current&&boardRef.current?.id===id)setMessages(current=>mergeChatMessages(current,data.messages||[]));}
   async function setupAux(id,next){
     viewQueue.current=new CasQueue(async(value,revision)=>{const saved=await api.request(`boards/${encodeURIComponent(id)}/view`,'PATCH',{view:value,view_revision:revision});return {value:saved.view,revision:saved.view_revision};},next.view_revision,(_state,reason)=>reason&&fail(reason));
     presentationQueue.current=null;const result=await api.request(`boards/${encodeURIComponent(id)}/presentation`);if(boardRef.current?.id!==id)return;setLayout(result.layout);presentationQueue.current=new CasQueue(async(value,revision)=>{const saved=await api.request(`boards/${encodeURIComponent(id)}/presentation`,'PATCH',{layout:value,revision});return {value:saved.layout,revision:saved.revision};},result.revision,(_state,reason)=>reason&&fail(reason));

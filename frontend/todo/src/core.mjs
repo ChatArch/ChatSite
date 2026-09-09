@@ -53,6 +53,11 @@ export function mergeCollapsed(nodes,rootId,previous,visible){
 }
 
 export const isDraftDirty=draft=>Boolean(draft&&JSON.stringify(draft.values)!==JSON.stringify(draft.base));
+export function mergeChatMessages(current,persisted){
+  const optimistic=current.filter(item=>String(item.id||'').startsWith('pending-'));
+  const unmatched=optimistic.filter(item=>!persisted.some(saved=>saved.role==='user'&&saved.content===item.content));
+  return [...persisted,...unmatched];
+}
 export const isBoardScopeCurrent=(scope,current)=>Boolean(scope&&scope.id===current.id&&scope.epoch===current.epoch&&scope.queue===current.queue&&scope.views===current.views);
 
 export class ScopedDrafts{

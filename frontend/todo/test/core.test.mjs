@@ -1,9 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {API,APIError,ScopedDrafts,SingleFlight,cleanNodes,diffNodes,mergeCollapsed,mergeVisibleBranch,SemanticQueue,CasQueue,UndoRedo,NavigationGate,apiBase,isAmbiguousWriteError,isBoardScopeCurrent,isDraftDirty} from '../src/core.mjs';
+import {API,APIError,ScopedDrafts,SingleFlight,cleanNodes,diffNodes,mergeCollapsed,mergeVisibleBranch,SemanticQueue,CasQueue,UndoRedo,NavigationGate,apiBase,isAmbiguousWriteError,isBoardScopeCurrent,isDraftDirty,mergeChatMessages} from '../src/core.mjs';
 
 const n=(id,parent_id=null,order=0,title=id)=>({id,parent_id,order,title,status:'pending',body:''});
 const board=(revision=1,nodes=[n('root')])=>({id:'b',title:'Board',revision,nodes,view:{pan:{x:0,y:0},zoom:1,positions:{},collapsed:[]},view_revision:0});
+
+test('model chat display merges the optimistic user turn with server messages',()=>{
+  const persisted=[{id:'server-user',role:'user',content:'same text'},{id:'assistant',role:'assistant',content:'ok'}];
+  const current=[{id:'pending-request',role:'user',content:'same text'}];
+  assert.deepEqual(mergeChatMessages(current,persisted),persisted);
+});
 
 test('definite model failure does not lock the composer as an unknown write',()=>{
   for(const code of ['invalid_model_response','model_timeout','model_auth_error','model_unavailable'])assert.equal(isAmbiguousWriteError(new APIError(502,code,'known failure')),false);
