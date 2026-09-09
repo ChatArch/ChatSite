@@ -16,7 +16,9 @@ The Todo feature belongs to ChatSite. ChatTodo supplies reusable task-forest ope
 
 ## Configuration and execution
 
-This is a development build. Install matching ChatSite and ChatTodo sources or wheels; the historical placeholder package does not implement the domain API.
+Install `"ChatSite[todo]>=0.1.3,<0.2.0"` with pip. The extra resolves the compatible ChatTodo domain dependency (`>=0.1.0,<0.2.0`).
+
+Models may use Responses or Chat Completions. Ark Agent Plan supports `doubao-seed-evolving` through Responses; retain the provider's Plan endpoint without automatic pay-as-you-go fallback. Run configuration checks in the same environment that has Todo installed so ChatEnv can discover its provider.
 
 The ChatEnv provider alias is `chatsite-todo`; its single storage namespace is `ChatSiteTodo`. Login credentials, model protocol/base/model/key and runtime paths belong to this configuration boundary. Explicit named profiles neither activate globally nor borrow another account's environment values.
 

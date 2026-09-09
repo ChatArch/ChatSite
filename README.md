@@ -67,9 +67,9 @@ chatsite
 
 ## Todo 任务树工作台
 
-此开发分支增加独立多画布、标题优先的思维导图、右／上／下新增、原地标题编辑与可选 Markdown 详情、模型对话、持久化和撤销。手机支持双指缩放与平移。Web 由 ChatSite 提供，任务领域由 ChatTodo 提供，部署时必须成对更新并验证实际安装代码。
+Todo 工作台提供独立多画布、标题优先的思维导图、右／上／下新增、原地标题编辑与可选 Markdown 详情、模型对话、持久化和撤销。手机支持双指缩放与平移。Web 由 ChatSite 提供，任务领域由 ChatTodo 提供；`pip install 'ChatSite[todo]'` 会安装兼容的领域包和服务依赖。
 
 - [工作台使用与验收](docs/todo-workbench.md)
 - [数据存储与模块接入](docs/todo-data-integration.md)：数据库、Node/Board/View、并发／幂等、Python/HTTP 与备份。
 
-使用 `chatsite todo serve` 启动，`chatsite todo check` 验证配置和模型。配置由 ChatEnv 的 `chatsite-todo` provider 管理。旧的 PyPI 占位包不包含此功能。
+使用 `chatsite todo serve` 启动，`chatsite todo check` 验证配置和模型。配置由 ChatEnv 的 `chatsite-todo` provider 管理。模型支持 Responses／Chat Completions；使用 Plan 服务时应保留其 Plan 专属入口，不自动回退到按量计费。

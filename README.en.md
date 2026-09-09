@@ -67,4 +67,4 @@ Read `DEVELOP.md` and `AGENTS.md` before expanding commands, and keep `--tree`, 
 
 ## Todo workbench
 
-This development branch adds a task canvas, Markdown editing, isolated model conversations, persistence, change receipts and undo. ChatSite serves the Web feature and consumes the corresponding ChatTodo development build. Run `chatsite todo serve` or `chatsite todo check`. Configuration belongs to the `chatsite-todo` ChatEnv provider. The historical PyPI placeholder does not provide this feature.
+The Todo workbench provides named canvases, title-first brainstorming, three-direction node creation, inline titles, optional Markdown details, isolated model conversations and undo. Touch devices support pinch zoom and pan. Install `ChatSite[todo]` for compatible domain and service dependencies; run `chatsite todo serve` or `chatsite todo check`. The `chatsite-todo` ChatEnv provider owns configuration. Responses and Chat Completions are supported; Plan providers retain their explicit Plan endpoint without pay-as-you-go fallback.

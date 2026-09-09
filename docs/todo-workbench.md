@@ -17,7 +17,9 @@ Todo 是 ChatSite 的独立功能入口；ChatTodo 提供任务树领域 API，�
 
 ## 配置与运行
 
-当前为开发构建，使用相互匹配的 ChatSite 与 ChatTodo 源码或 wheel，不能将历史占位包当成领域实现。
+通过 `pip install "ChatSite[todo]>=0.1.3,<0.2.0"` 安装工作台；依赖解析会同时安装兼容的 ChatTodo 领域层（`>=0.1.0,<0.2.0`）。
+
+模型可使用 Responses 或 Chat Completions。Ark Agent Plan 的 `doubao-seed-evolving` 可通过 Responses 协议接入；使用套餐服务时保持供应商的 Plan 专属入口，不自动回退到按量计费。配置检查应在安装了 Todo 的同一个环境执行，以确保 ChatEnv 能发现该 provider。
 
 配置注册为 ChatEnv `chatsite-todo` provider，存储命名空间为 `ChatSiteTodo`。站点登录、模型地址/协议/型号及密钥只从这个配置边界读取。具名 profile 不会自动激活，也不会回退到其他账号的环境变量。
 

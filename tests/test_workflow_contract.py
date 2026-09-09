@@ -33,6 +33,8 @@ def test_docs_workflows_use_chatarch_site_url():
     assert "chatsite --tree-brief" in ci
     assert "python -m twine check dist/*" in ci
     assert "python -m pip install --force-reinstall dist/*.whl" in ci
+    assert '.[dev,docs,todo]' in ci
+    assert 'node --test tests/todo_frontend/*.cjs' in ci
 
 
 def test_mkdocs_material_renderer_and_public_domain():

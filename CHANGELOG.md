@@ -1,10 +1,15 @@
 # Changelog
 
-## Unreleased
+## 2026-09-09 - 0.1.3
 
-### Added
+### 新增
 
-- Added `chatsite-web`, a login-protected ChatSite hub for ChatArch/Chat-series feature pages. The first feature is an Overleaf editor that calls ChatOL as a tool module and supports project/file browsing, OT-based doc saves, compile previews, Settings, and an OpenAI Responses API chat loop.
+- 独立 Todo 工作台：多画布导航、标题优先思维导图、三方向新增、原地编辑与可选 Markdown 详情。
+- 手机双指缩放／平移、独立视图版本、草稿恢复、原请求重试及画布切换保护。
+- ChatTodo 领域包集成、同源登录和 CSRF、任务与对话持久化、原子修改、回执、确认和撤销。
+- 兼容 Responses 与 Chat Completions 的服务端模型适配，包括 Ark Plan 的 Evolving 模型；结构化提案及分支范围校验。
+- 中英文使用、存储与模块接入文档，Todo Python／JavaScript 回归加入发布 CI。
+- 登录保护的 ChatSite 功能首页、Overleaf 编辑器与 ChatOL 工具集成。
 
 ## 2026-08-22 - 0.1.2
 
