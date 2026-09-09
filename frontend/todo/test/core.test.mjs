@@ -12,7 +12,8 @@ test('model chat display merges the optimistic user turn with server messages',(
 });
 
 test('definite model failure does not lock the composer as an unknown write',()=>{
-  for(const code of ['invalid_model_response','model_timeout','model_auth_error','model_unavailable'])assert.equal(isAmbiguousWriteError(new APIError(502,code,'known failure')),false);
+  for(const code of ['invalid_model_response','model_auth_error','model_unavailable'])assert.equal(isAmbiguousWriteError(new APIError(502,code,'known failure')),false);
+  assert.equal(isAmbiguousWriteError(new APIError(504,'model_timeout','expired request')),true);
   assert.equal(isAmbiguousWriteError(new APIError(500,'internal_error','uncertain')),true);
   assert.equal(isAmbiguousWriteError(new APIError(0,'network','lost')),true);
   assert.equal(isAmbiguousWriteError(new APIError(200,'invalid_response','unreadable')),true);

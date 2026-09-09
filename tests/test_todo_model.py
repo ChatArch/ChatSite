@@ -305,7 +305,7 @@ def test_plain_assistant_conversation_has_no_operations(protocol, text, board):
 
 @pytest.mark.parametrize("protocol", ["responses", "chat_completions"])
 def test_oversized_reply_is_rejected_before_any_mutation(protocol, board):
-    response = provider_response(protocol, {"message": "x" * 65537, "operations": []})
+    response = provider_response(protocol, {"message": "x" * 65536, "operations": []})
     with pytest.raises(adapter().ModelError):
         generate(client_with_response(protocol, response), board)
 
