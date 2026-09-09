@@ -13,6 +13,7 @@ import httpx
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_REQUEST_BYTES = 512 * 1024
 MAX_MESSAGE_CHARS = 12000
+MAX_REPLY_CHARS = 65536
 MAX_HISTORY_MESSAGES = 20
 MAX_HISTORY_CHARS = 4000
 MAX_NODE_BODY_CHARS = 8000
@@ -28,7 +29,8 @@ SYSTEM_PROMPT = """你是中文任务树协作助手，只能通过 todo_update 
 新任务默认 pending；除非有明确用户说明或执行证据，不得假装完成。
 不要把讨论或规划完成当成实施完成。不要自动删除或大规模重组，后端会要求确认。
 只能使用 create/node、update/id/fields、move/id/parent_id/order、delete/id 操作。
-只需讨论而无需改树时 operations=[]。message 必须说明提案，不得声称修改已经应用。
+只需讨论而无需改树时直接回复自然语言，不必调用工具；也可通过 todo_update 返回 operations=[]。
+需要改树时必须使用 todo_update。message 必须说明提案，不得声称修改已经应用。
 上下文出现截断标记时不得猜测被省略的正文或覆盖未知内容，应要求用户补充。
 """
 
@@ -69,7 +71,7 @@ def _tool_schema() -> dict:
     return {
         "name": "todo_update", "description": "仅返回中文回复和当前任务树的变更提案，不执行修改。",
         "parameters": shape({
-            "message": {"type": "string", "minLength": 1},
+            "message": {"type": "string", "minLength": 1, "maxLength": MAX_REPLY_CHARS},
             "operations": {"type": "array", "items": {"oneOf": variants}},
         }, ["message", "operations"]),
     }
@@ -217,9 +219,16 @@ def _parse_response(data, protocol) -> dict:
             _bad_response()
         text = call["arguments"]
     else:
-        text = "".join(texts)
+        text = "".join(texts).strip()
+        if not text or len(text) > MAX_REPLY_CHARS:
+            _bad_response()
+        # A normal assistant message is not an edit plan. JSON-looking output
+        # retains the legacy strict proposal path; malformed calls never fall back.
+        if not text.startswith(("{", "[")):
+            return {"content": text, "operations": [], "response_id": response_id}
     result = _load_json(text)
-    if not _shape(result, ("message", "operations")) or not isinstance(result["message"], str) or not result["message"].strip():
+    if (not _shape(result, ("message", "operations")) or not isinstance(result["message"], str)
+            or not result["message"].strip() or len(result["message"]) > MAX_REPLY_CHARS):
         _bad_response()
     _validate_operations(result["operations"])
     return {"content": result["message"], "operations": result["operations"], "response_id": response_id}
@@ -325,7 +334,7 @@ class ModelClient:
                 "stream": True, "store": False,
                 "instructions": SYSTEM_PROMPT, "input": [{"role": "user", "content": context}],
                 "tools": [{"type": "function", **function}],
-                "tool_choice": {"type": "function", "name": "todo_update"},
+                "tool_choice": "auto",
             })
             if previous_response_id is not None:
                 payload["previous_response_id"] = previous_response_id
@@ -333,7 +342,7 @@ class ModelClient:
             payload.update({
                 "messages": [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": context}],
                 "tools": [{"type": "function", "function": function}],
-                "tool_choice": {"type": "function", "function": {"name": "todo_update"}},
+                "tool_choice": "auto",
             })
         body = _dump_input(payload).encode("utf-8")
         # No environment proxy/config discovery, redirect, protocol fallback or retry.

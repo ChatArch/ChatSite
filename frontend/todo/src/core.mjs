@@ -1,6 +1,7 @@
 export const clone=value=>structuredClone(value);
 export const uuid=()=>crypto.randomUUID().replaceAll('-','');
-export const isAmbiguousWriteError=error=>error?.status===0||error?.status>=500||(error?.status>=200&&error?.status<300);
+const definiteFailures=new Set(['invalid_model_response','model_not_configured','invalid_model_config','model_auth_error','model_http_error','model_response_too_large','model_timeout','model_unavailable','model_stream_failed','import_storage_error']);
+export const isAmbiguousWriteError=error=>error?.status===0||(!definiteFailures.has(error?.code)&&(error?.status>=500||(error?.status>=200&&error?.status<300)));
 const statuses=new Set(['pending','in_progress','completed','cancelled']);
 
 export function cleanNodes(value){

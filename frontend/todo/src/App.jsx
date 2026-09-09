@@ -187,7 +187,7 @@ export default function App(){
           <div className="resizer" onPointerDown={resize}/>
           <aside className="chat-pane">
             <div className="chat-head"><div><span className="eyebrow">Ant Design X</span><h2>对话</h2></div><button className="icon mobile-close" onClick={()=>setChatOpen(false)}>×</button></div>
-            <Chat key={board?.id||'none'} boardKey={board?.id||'none'} messages={messages} busy={busy} onSend={send} onApply={applyProposal} context={selectedNode?.title||'整个画布'} onClear={selected?()=>setSelected(null):null} initialDraft={chatDrafts.current.get(board?.id)} onDraftChange={value=>chatDrafts.current.set(board?.id,value)}/>
+            <Chat key={board?.id||'none'} boardKey={board?.id||'none'} messages={messages} busy={busy} ready={Boolean(board)} onSend={send} onApply={applyProposal} context={selectedNode?.title||'整个画布'} onClear={selected?()=>setSelected(null):null} initialDraft={chatDrafts.current.get(board?.id)} onDraftChange={value=>chatDrafts.current.set(board?.id,value)}/>
             <div className="chat-foot">{settings?.configured?'模型已配置':'模型未配置'} · 完整响应</div>
           </aside>
         </div>

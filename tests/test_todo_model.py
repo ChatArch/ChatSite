@@ -122,7 +122,7 @@ def test_protocol_payload_and_tool_result(protocol, path, board):
         function = payload["tools"][0]
         assert "function" not in function
         assert function["type"] == "function"
-        assert payload["tool_choice"] == {"type": "function", "name": "todo_update"}
+        assert payload["tool_choice"] == "auto"
         assert payload["previous_response_id"] == "resp-explicit"
         context = json.loads(payload["input"][-1]["content"])
         prompt = payload["instructions"]
@@ -130,7 +130,7 @@ def test_protocol_payload_and_tool_result(protocol, path, board):
         assert "previous_response_id" not in payload
         assert payload["tools"][0]["type"] == "function"
         function = payload["tools"][0]["function"]
-        assert payload["tool_choice"] == {"type": "function", "function": {"name": "todo_update"}}
+        assert payload["tool_choice"] == "auto"
         context = json.loads(payload["messages"][-1]["content"])
         prompt = payload["messages"][0]["content"]
     assert function["name"] == "todo_update"
@@ -278,8 +278,8 @@ def test_bad_provider_envelopes_are_safe_errors(protocol, response, board):
 
 
 @pytest.mark.parametrize("protocol", ["responses", "chat_completions"])
-@pytest.mark.parametrize("text", ["", "hello", "```json\n{}\n```", '{"message":"ok","operations":[],"bad":NaN}'])
-def test_plain_text_must_be_one_valid_json_proposal(protocol, text, board):
+@pytest.mark.parametrize("text", ["", '{"message":"ok","operations":[],"bad":NaN}', '{broken', '[]'])
+def test_empty_or_malformed_json_proposals_remain_rejected(protocol, text, board):
     response = provider_response(protocol, text_only=True)
     if protocol == "responses":
         response["output"][0]["content"][0]["text"] = text
@@ -288,6 +288,26 @@ def test_plain_text_must_be_one_valid_json_proposal(protocol, text, board):
     with pytest.raises(adapter().ModelError) as caught:
         generate(client_with_response(protocol, response), board)
     assert caught.value.code == "invalid_model_response"
+
+
+@pytest.mark.parametrize("protocol", ["responses", "chat_completions"])
+@pytest.mark.parametrize("text", ["你好，先讨论思路。", "```python\nprint('example')\n```"])
+def test_plain_assistant_conversation_has_no_operations(protocol, text, board):
+    response = provider_response(protocol, text_only=True)
+    if protocol == "responses":
+        response["output"][0]["content"][0]["text"] = text
+    else:
+        response["choices"][0]["message"]["content"] = text
+    result = generate(client_with_response(protocol, response), board)
+    assert result["content"] == text
+    assert result["operations"] == []
+
+
+@pytest.mark.parametrize("protocol", ["responses", "chat_completions"])
+def test_oversized_reply_is_rejected_before_any_mutation(protocol, board):
+    response = provider_response(protocol, {"message": "x" * 65537, "operations": []})
+    with pytest.raises(adapter().ModelError):
+        generate(client_with_response(protocol, response), board)
 
 
 @pytest.mark.parametrize("protocol", ["responses", "chat_completions"])

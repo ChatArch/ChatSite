@@ -36,6 +36,12 @@ test('host exposes independent view and presentation CAS plus exact retries',()=
   for(const token of ['/presentation','view_revision','request_id','unresolved','retryUnknown','protectRecovered'])assert.ok(app.includes(token),token);
 });
 
+test('composer explains the missing-board prerequisite',()=>{
+  assert.match(app,/ready=\{Boolean\(board\)\}/);
+  assert.match(chat,/disabled=\{!ready\}/);
+  assert.ok(chat.includes('先新建或选择画布'));
+});
+
 test('Ant Design X chat has completed markdown and cancelled proposals return false',()=>{
   for(const token of ['Bubble.List','<Sender','<XMarkdown','hasNextChunk:false','result===false'])assert.ok(chat.includes(token),token);
   assert.doesNotMatch(chat,/regenerate|cancelRun|stopGenerating/);
