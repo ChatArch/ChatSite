@@ -154,9 +154,9 @@ def test_protocol_payload_and_tool_result(protocol, path, board):
 
 
 @pytest.mark.parametrize("protocol", ["responses", "chat_completions"])
-def test_explicit_json_text_compatibility(protocol, board):
+def test_json_text_is_displayed_without_becoming_a_tool_call(protocol, board):
     result = generate(client_with_response(protocol, provider_response(protocol, text_only=True)), board)
-    assert result["content"] == proposal()["message"]
+    assert result["content"] == json.dumps(proposal(), ensure_ascii=False)
     assert result["operations"] == []
 
 
@@ -278,8 +278,8 @@ def test_bad_provider_envelopes_are_safe_errors(protocol, response, board):
 
 
 @pytest.mark.parametrize("protocol", ["responses", "chat_completions"])
-@pytest.mark.parametrize("text", ["", '{"message":"ok","operations":[],"bad":NaN}', '{broken', '[]'])
-def test_empty_or_malformed_json_proposals_remain_rejected(protocol, text, board):
+@pytest.mark.parametrize("text", ["", " "])
+def test_empty_plain_responses_remain_rejected(protocol, text, board):
     response = provider_response(protocol, text_only=True)
     if protocol == "responses":
         response["output"][0]["content"][0]["text"] = text
@@ -291,7 +291,7 @@ def test_empty_or_malformed_json_proposals_remain_rejected(protocol, text, board
 
 
 @pytest.mark.parametrize("protocol", ["responses", "chat_completions"])
-@pytest.mark.parametrize("text", ["你好，先讨论思路。", "```python\nprint('example')\n```"])
+@pytest.mark.parametrize("text", ["你好，先讨论思路。", "```python\nprint('example')\n```", '{"message":"delete","operations":[{"op":"delete","id":"root"}]}', '{broken', '[]', '```json\n{"operations":[]}\n```'])
 def test_plain_assistant_conversation_has_no_operations(protocol, text, board):
     response = provider_response(protocol, text_only=True)
     if protocol == "responses":

@@ -223,10 +223,9 @@ def _parse_response(data, protocol) -> dict:
         text = "".join(texts).strip()
         if not text or len(text) > MAX_REPLY_CHARS:
             _bad_response()
-        # A normal assistant message is not an edit plan. JSON-looking output
-        # retains the legacy strict proposal path; malformed calls never fall back.
-        if not text.startswith(("{", "[")):
-            return {"content": text, "operations": [], "response_id": response_id}
+        # Only arguments from a recognized tool call can become edit operations.
+        # Plain text, including JSON examples, is discussion and never executable.
+        return {"content": text, "operations": [], "response_id": response_id}
     result = _load_json(text)
     if (not _shape(result, ("message", "operations")) or not isinstance(result["message"], str)
             or not result["message"].strip() or len(result["message"]) > MAX_REPLY_CHARS):

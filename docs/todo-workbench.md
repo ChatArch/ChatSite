@@ -36,7 +36,7 @@ chatsite todo serve
 
 浏览器通过同源 session cookie 访问 API，写入还需要 CSRF token。模型连接在后端进行。Responses 使用无状态请求和按任务树隔离的本地历史，不把尚未回传 tool output 的响应 ID 当作下一次请求的有状态链。
 
-普通对话可返回自然语言或 Markdown，不会修改画布。改图仍使用严格校验的 `todo_update` 或兼容 JSON 提案；错误、未知或多重工具调用不会降级为可执行文本。已确认的模型生成失败可重新发送新请求，网络丢失的写入回执则保持原请求身份重试。
+普通对话可返回自然语言、Markdown 或 JSON 示例，不会修改画布。只有真正的 `todo_update` 工具调用及其严格校验的参数能改图；错误、未知或多重工具调用不会降级为可执行文本。已确认的模型生成失败可重新发送新请求，网络丢失的写入回执则保持原请求身份重试。
 
 节点字段为 `id / parent_id / title / status / body / order`。修改支持 `create / update / move / delete`；模型不能指定 owner 或访问其他任务树。HTTP 请求、节点数量、正文及模型响应都有边界限制。
 

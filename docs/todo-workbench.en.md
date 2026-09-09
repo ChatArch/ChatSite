@@ -35,7 +35,7 @@ Checks send one bounded real no-edit model request. The service binds to loopbac
 
 Browser requests use same-origin session cookies and write-time CSRF validation. Model requests originate on the server. Stateless Responses calls use per-board local history; unfinished function-call response IDs are not reused as provider-side conversation chains.
 
-Ordinary conversation may return natural language or Markdown without modifying the board. Edits still require validated `todo_update` calls or compatible JSON proposals; malformed, unknown or multiple tool calls never become executable text. Definite model-generation failures allow a new user request, while missing write receipts retain the original request identity for retry.
+Ordinary conversation may return natural language, Markdown or JSON examples without modifying the board. Edits require a real `todo_update` tool call with validated arguments; malformed, unknown or multiple tool calls never become executable text. Definite model-generation failures allow a new user request, while missing write receipts retain the original request identity for retry.
 
 Nodes contain `id`, `parent_id`, `title`, `status`, `body`, and `order`. Operations are `create`, `update`, `move`, and `delete`. Model output cannot select an owner or another board. Request sizes, node counts, content sizes and model responses are bounded.
 
