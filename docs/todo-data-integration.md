@@ -59,10 +59,13 @@
 | `chat_requests` | 请求指纹与 `pending / generated / done / failed` 状态、结果 |
 | `proposals` | 高风险操作、基线版本、范围、应用状态及结果 |
 | `board_deletions` | 跨两个数据库删除时的清理回执 |
+| `presentations` | 按 `(owner, board_id)` 隔离的 Web 布局名称及独立 revision |
 
 模型生成结果先写入请求状态，再应用领域变更，便于重放时避免再次调用模型。当前实现使用本地、按画布隔离的对话历史，向 Responses 发无状态请求；不会串用其他画布的响应链。
 
 删除两个数据库中的内容不是一个跨库事务。领域画布已经删除但会话清理失败时，API 返回 `board_deleted=true, cleanup_pending=true`；再次提交同一画布的明确删除请求可完成有界恢复，不应将已删除误报为“删除失败”。
+
+导入的布局写入若失败，会补偿撤回新画布。`import_storage_error` 表示已撤回；`import_rollback_pending` 表示撤回结果待核对，`import_cleanup_pending` 表示画布已撤回但关联状态还需清理。后两种错误会给出本次画布 ID，可通过明确的 DELETE 请求恢复，不要再次导入来掩盖未知结果。并发修改导致版本冲突时不会强制删除用户的新编辑。
 
 ## 数据模型
 
@@ -87,13 +90,14 @@
 - `title` 必须非空，最多 200 字符；`body` 是可选的 Markdown，最大 128 KiB。
 - `status`：`pending / in_progress / completed / cancelled`；`order` 为同级排序的非负整数。
 - 最多 2000 节点、64 层，每批最多 50 个领域操作。非法字段、重复 ID、孤儿、环、自引用会被拒绝。
-- 坐标不是父子关系。拖动、鼠标滚轮、缩放按钮和双指手势只更新视图，不改变任务语义。
+- 坐标不是父子关系。平移空白画布、鼠标滚轮、缩放按钮和双指手势只更新视图；拖拽节点重挂或排序会提交语义 `move` 操作。
 - `zoom` 范围为 `0.2–2.5`；坐标必须是有界有限数值。`positions`、`collapsed` 中不再存在的节点引用会被过滤。
 
 ### 版本、回执与未知结果
 
 - `revision` 只描述节点语义。真实无变化不增版本，`change=null`。
 - `view_revision` 单独描述视图。HTTP 保存必须带读取时的 `view_revision`；过期版本返回 409，不能覆盖另一窗口的新视图。
+- SimpleMindMap 的 Web 布局偏好独立保存在 `presentations`，不属于 ChatTodo 领域 schema，也不递增任务的 `revision` 或 `view_revision`。默认 `logicalStructure`；可选 `mindMap`、`organizationStructure`、`catalogOrganization`、`timeline`、`fishbone`。布局 API 的 `revision` 仅用于该偏好的并发保护。
 - `request_id` 绑定**完整原始输入**。原请求重放返回回执；相同 ID 但不同请求体返回 409。
 - 连接断开不代表写入失败。先读回或显式重试**相同 ID、相同原始请求体**；不能自动生成新 ID 再次调用模型。
 - 只有确认是版本冲突、核对过最新状态后，才把重新应用作为新的请求。UI 保留未知写入的身份与编辑内容。
@@ -142,10 +146,12 @@ store.save_view(
 | `GET /api/boards/{id}` | `{board}`；不存在或跨 owner 都返回 404 |
 | `PATCH /api/boards/{id}` | `{revision, request_id, operations, confirm_destructive}` → `{board, change}` |
 | `PATCH /api/boards/{id}/view` | `{view, view_revision}` → `{view, view_revision}` |
+| `GET /api/boards/{id}/presentation` | `{layout, revision}` |
+| `PATCH /api/boards/{id}/presentation` | `{layout, revision}` → 当前布局偏好；版本过期返回 409 |
 | `POST /api/boards/{id}/undo` | `{revision, request_id}` → `{board, change}` |
 | `GET /api/boards/{id}/history` | `{changes}` |
-| `GET /api/boards/{id}/export` | 画布 JSON，不含应用的登录／模型配置 |
-| `POST /api/import` | `{board}` → 新画布；不覆盖已有画布 |
+| `GET /api/boards/{id}/export` | 画布 JSON，包含可选 Web `presentation`，不含应用登录／模型配置 |
+| `POST /api/import` | `{board}` → 新画布；可恢复 `presentation.layout`，不覆盖已有画布；旧 JSON 仍可导入 |
 | `DELETE /api/boards/{id}` | `{revision, confirm:true}` → 删除／清理状态 |
 | `GET /api/boards/{id}/messages` | 对话 ID 与消息列表 |
 | `POST /api/boards/{id}/chat` | `{message, selected_node_id, revision, request_id}` → 助手消息、画布、change／proposal |
