@@ -115,6 +115,13 @@ test('unknown redo preserves its original method, request id, and payload',async
   assert.deepEqual(seen.at(-1),original);assert.equal(seen.at(-1).method,'PATCH');
 });
 
+test('successful CAS receipts are not passed as errors',async()=>{
+  const errors=[];
+  const q=new CasQueue(async(value,revision)=>({value,revision:revision+1}),0,(_state,error)=>{if(error)errors.push(error);});
+  q.schedule({zoom:1.2});await q.flush();
+  assert.deepEqual(errors,[]);
+});
+
 test('independent CAS queue does not consume newer view or layout',async()=>{
   const sent=[];let release;
   const q=new CasQueue(async(value,revision)=>{sent.push({value,revision});if(sent.length===1)await new Promise(r=>release=r);return {value,revision:revision+1};},0);

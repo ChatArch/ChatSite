@@ -114,7 +114,7 @@ export class CasQueue{
   constructor(save,revision=0,notify=()=>{},delay=350){this.save=save;this.revision=revision;this.notify=notify;this.delay=delay;this.seq=0;this.done=0;this.value=null;this.running=null;this.timer=null;this.error=null;}
   get pending(){return this.seq>this.done;}
   schedule(value){this.value=clone(value);this.seq++;this.error=null;clearTimeout(this.timer);this.timer=setTimeout(()=>this.flush().catch(()=>{}),this.delay);this.notify('pending');}
-  async flush(){clearTimeout(this.timer);if(this.running)return this.running;this.running=(async()=>{while(this.seq>this.done){const seq=this.seq,value=clone(this.value);this.notify('saving');try{const result=await this.save(value,this.revision);this.revision=result.revision;this.done=seq;this.error=null;this.notify(this.seq===seq?'saved':'pending',result);}catch(error){this.error=error;this.notify('error',error);throw error;}}})();try{return await this.running;}finally{this.running=null;}}
+  async flush(){clearTimeout(this.timer);if(this.running)return this.running;this.running=(async()=>{while(this.seq>this.done){const seq=this.seq,value=clone(this.value);this.notify('saving');try{const result=await this.save(value,this.revision);this.revision=result.revision;this.done=seq;this.error=null;this.notify(this.seq===seq?'saved':'pending',null,result);}catch(error){this.error=error;this.notify('error',error);throw error;}}})();try{return await this.running;}finally{this.running=null;}}
   rebase(revision){this.revision=revision;}
 }
 

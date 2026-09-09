@@ -12,6 +12,10 @@ test('native adapter commits unthrottled text before host actions',()=>{
   assert.ok(map.indexOf('hideEditTextBox()')<map.indexOf('originAddHistory()'));
 });
 
+test('native expand commands also publish view state',()=>{
+  assert.match(map,/original\(name,\.\.\.args\).*SET_NODE_EXPAND.*emitView\(\)/s);
+});
+
 test('native back and forward delegate to authoritative host history',()=>{
   assert.match(map,/name==='BACK'/);assert.match(map,/latest\.current\.onUndo/);
   assert.match(map,/name==='FORWARD'/);assert.match(map,/latest\.current\.onRedo/);
