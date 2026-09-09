@@ -1,0 +1,24 @@
+import React,{useMemo,useRef,useState} from 'react';
+import {Bubble,Sender} from '@ant-design/x';
+import XMarkdown from '@ant-design/x-markdown';
+
+const COMPLETE={hasNextChunk:false,enableAnimation:false,tail:false};
+async function copy(text){await navigator.clipboard.writeText(text);}
+function Copy({text}){const [done,setDone]=useState(false);return <button className="text-button" disabled={!text} onClick={async()=>{try{await copy(text);setDone(true);setTimeout(()=>setDone(false),1500);}catch{}}}>{done?'已复制':'复制'}</button>;}
+function SafeLink({href,children}){let safe=false;try{safe=['http:','https:','mailto:'].includes(new URL(href,location.href).protocol);}catch{}return safe?<a href={href} target="_blank" rel="noopener noreferrer">{children}</a>:<span>{children}</span>;}
+function ImageLink({src,alt}){return <SafeLink href={src}>图片：{alt||'查看'}</SafeLink>;}
+function ChangeCard({change}){if(!change)return null;return <div className="change-card"><strong>画布已更新</strong>{change.summary&&<p>{change.summary}</p>}{Array.isArray(change.operations)&&<small>{change.operations.length} 项变更</small>}</div>;}
+function ProposalCard({message,onApply,busy}){const proposal=message.proposal,[state,setState]=useState('');if(!proposal)return null;const applied=Boolean(message.change);const operations=Array.isArray(proposal.operations)?proposal.operations:[];
+  async function apply(){if(busy||applied||state==='pending')return;setState('pending');try{const result=await onApply(proposal);setState(result===false?'': 'submitted');}catch{setState('error');}}
+  return <section className="proposal-card"><strong>{applied?'变更提案已应用':'待确认的画布变更'}</strong>{proposal.summary&&<p>{proposal.summary}</p>}<details><summary>查看 {operations.length} 项操作</summary><pre>{JSON.stringify(operations,null,2)}</pre></details><button disabled={busy||applied||state==='pending'||state==='submitted'||!operations.length} onClick={apply}>{applied?'已应用':state==='pending'?'确认中…':state==='submitted'?'已提交':'确认应用'}</button>{state==='error'&&<p role="alert">应用未完成，请核对后重试。</p>}</section>;
+}
+function Body({message,onApply,busy}){return <div className={message.isError?'message-error':''}>{message.isError&&<p role="alert">请求未完成</p>}<XMarkdown content={message.content||''} className="chat-markdown" components={{a:SafeLink,img:ImageLink}} streaming={COMPLETE} escapeRawHtml disableDefaultStyles/><ChangeCard change={message.change}/><ProposalCard message={message} onApply={onApply} busy={busy}/></div>;}
+const roles={user:{placement:'end',variant:'filled',shape:'corner',header:<span className="turn-label">你</span>},assistant:{placement:'start',variant:'borderless',shape:'corner',header:<span className="turn-label">助手</span>}};
+
+export default function Chat({boardKey,messages,busy,onSend,onApply,context,onClear,ready=true,initialDraft='',onDraftChange=()=>{}}){
+  const [draft,setDraft]=useState(()=>initialDraft),[error,setError]=useState('');const lock=useRef(false),list=useRef(null);
+  const updateDraft=value=>{setDraft(value);onDraftChange(value);};
+  const items=useMemo(()=>[...messages.map(message=>({key:message.id,role:message.role,content:message.content||'',contentRender:()=> <Body message={message} onApply={onApply} busy={busy}/>,footer:message.content?<Copy text={message.content}/>:null,status:message.isError?'error':'success',typing:false,streaming:false})),...(busy?[{key:'pending',role:'assistant',content:'',loading:true,loadingRender:()=> <span className="chat-loading">正在处理…</span>}]:[])],[messages,busy,onApply]);
+  async function submit(text){text=text.trim();if(!ready||!text||busy||lock.current)return;lock.current=true;setError('');updateDraft('');try{await onSend(text);list.current?.scrollTo?.({top:'bottom'});}catch(reason){setDraft(current=>{const restored=current||text;onDraftChange(restored);return restored;});setError(reason.message||'发送未完成');}finally{lock.current=false;}}
+  return <section data-board-key={boardKey} className="chat" aria-label="对话"><div className="chat-context"><span>当前范围</span><b title={context}>{context||'整个画布'}</b>{onClear&&<button className="text-button" disabled={busy} onClick={onClear}>整个画布</button>}</div><div className="chat-stage">{!items.length&&<div className="chat-empty"><strong>从这里开始对话</strong><p>直接提问，或描述希望调整的待办。</p></div>}<Bubble.List ref={list} items={items} role={roles} autoScroll aria-label="对话消息"/></div><div className="sender-dock">{error&&<p className="chat-error" role="alert">{error}</p>}<Sender value={draft} onChange={updateDraft} onSubmit={submit} disabled={!ready} submitType="enter" loading={false} placeholder={ready?'输入消息…':'先新建或选择画布'} autoSize={{minRows:2,maxRows:7}} suffix={false} footer={(_, {components:{SendButton}})=><div className="sender-footer"><small>{ready?'回车发送 · Shift + 回车换行':'先新建或选择画布'}</small><SendButton disabled={!ready||busy||!draft.trim()} shape="default" icon={null}>{busy?'处理中…':'发送'}</SendButton></div>}/></div></section>;
+}

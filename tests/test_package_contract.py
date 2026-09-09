@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 from click.testing import CliRunner
 
@@ -36,4 +37,12 @@ def test_checked_in_cli_trees_match_registered_runtime_output():
         "docs/cli-tree.en.md",
     ):
         text = (ROOT / relative_path).read_text(encoding="utf-8")
-        assert tree_block in text
+        if relative_path.endswith('.en.md'):
+            blocks = re.findall(r'```text\n(chatsite\n.*?)```', text, flags=re.S)
+            assert len(blocks) == 1
+            # Localization may translate annotations, never commands/signatures/hierarchy.
+            signature = lambda value: [line.split(' # ', 1)[0].rstrip() for line in value.splitlines()]
+            assert signature(blocks[0]) == signature(full.output)
+            assert not re.search(r'[\u4e00-\u9fff]', blocks[0])
+        else:
+            assert tree_block in text

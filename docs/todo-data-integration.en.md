@@ -13,13 +13,15 @@ The default data directory is `$CHATARCH_HOME/chatsite/todo/`, normally `~/.chat
 | Database | Tables and responsibility |
 |---|---|
 | `boards.sqlite3` | `boards` stores owner/title/revisions and JSON `nodes`/`view`; `changes` stores actual diffs; `undo_stack` stores node snapshots; `requests` stores request fingerprints and replay receipts |
-| `web.sqlite3` | `sessions`, `login_failures`, `conversations`, `messages`, `chat_requests`, `proposals`, `board_deletions` |
+| `web.sqlite3` | `sessions`, `login_failures`, `conversations`, `messages`, `chat_requests`, `proposals`, `board_deletions`, and owner/board-scoped `presentations` |
 
 Directories are private and database files use mode 0600. Web state uses SQLite WAL, so sidecar files may exist. Session tokens are stored as hashes, not plaintext tokens. Conversation messages may contain private user content even though application API keys are not stored there.
 
 Model request state advances through `pending → generated → done/failed`. Generation is saved before domain edits to avoid another model call during recovery. Model calls use stateless Responses with per-board local history. Message reads return the latest 200 messages; this is not a physical retention guarantee. Domain audit/request receipts use a bounded window (currently 1000); undo snapshots are separate. Idempotency is not a permanent external deduplication ledger.
 
 Deletion is coordinated across two databases rather than a cross-database transaction. A known committed board deletion with failed conversation cleanup returns `board_deleted=true, cleanup_pending=true`; explicitly repeating the board deletion provides bounded cleanup recovery.
+
+If imported layout persistence fails, the service compensates by removing the new board. `import_storage_error` means rollback completed; `import_rollback_pending` requires checking the rollback outcome, while `import_cleanup_pending` means only associated Web state needs cleanup. Pending errors identify the board for an explicit DELETE recovery, not another import. A concurrent semantic edit is never force-deleted to make rollback appear successful.
 
 ## Model
 
@@ -31,9 +33,11 @@ A Board contains `id, title, revision, nodes, view, view_revision, updated_at`. 
 
 Roots have null parents; multiple roots are supported. Use `(board_id,node_id)` as the full node locator. Status is `pending/in_progress/completed/cancelled`. Titles are non-empty and at most 200 characters; Markdown bodies are optional and at most 128 KiB. Limits: 2000 nodes, 64 levels, 50 operations per batch. Unknown fields, duplicate IDs, orphans and cycles are rejected.
 
-View shape is `{pan:{x,y},zoom,positions:{node_id:{x,y}},collapsed:[node_id]}`. Coordinates are not parent relationships. Dragging and pinch gestures change only the view, with zoom bounded to 0.2–2.5. Invalid or stale node references are filtered.
+View shape is `{pan:{x,y},zoom,positions:{node_id:{x,y}},collapsed:[node_id]}`. Coordinates are not parent relationships. Blank-canvas panning and pinch gestures change only the view, with zoom bounded to 0.2–2.5; dragging a node to reparent/reorder it submits semantic `move` operations. Invalid or stale node references are filtered.
 
 `revision` tracks semantic edits; no-ops return `change=null` without incrementing it. `view_revision` is an independent compare-and-swap version. A stale view save returns 409 rather than overwriting another tab.
+
+SimpleMindMap layout preferences belong to ChatSite's `presentations` table, not the ChatTodo domain schema. They have their own `revision` and do not advance either domain version. The default is `logicalStructure`; supported alternatives are `mindMap`, `organizationStructure`, `catalogOrganization`, `timeline`, and `fishbone`.
 
 `request_id` binds the exact original input. Explicit recovery repeats the same ID and same body; do not mint a new ID after an ambiguous network failure. Only a verified conflict followed by deliberate reapplication should become a new attempt.
 
@@ -69,10 +73,11 @@ HTTP clients authenticate through `/api/login`, retain its HttpOnly session cook
 | `GET/POST /api/boards` | List boards / create `{title}` |
 | `GET/PATCH /api/boards/{id}` | Read / mutate `{revision,request_id,operations,confirm_destructive}` |
 | `PATCH /api/boards/{id}/view` | `{view,view_revision}` |
+| `GET/PATCH /api/boards/{id}/presentation` | `{layout,revision}`; stale saves return 409 |
 | `POST /api/boards/{id}/undo` | `{revision,request_id}` |
 | `GET /api/boards/{id}/history` | `{changes}` |
-| `GET /api/boards/{id}/export` | Board JSON |
-| `POST /api/import` | `{board}` imported as a new board |
+| `GET /api/boards/{id}/export` | Board JSON with optional Web `presentation` |
+| `POST /api/import` | `{board}` imported as a new board, optionally restoring `presentation.layout`; legacy JSON remains supported |
 | `DELETE /api/boards/{id}` | `{revision,confirm:true}` and committed/cleanup outcome |
 | `GET /api/boards/{id}/messages` | Conversation ID and messages |
 | `POST /api/boards/{id}/chat` | `{message,selected_node_id,revision,request_id}` |

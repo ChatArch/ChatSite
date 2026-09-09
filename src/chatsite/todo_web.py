@@ -11,6 +11,7 @@ import logging
 import os
 from pathlib import Path
 import re
+import sqlite3
 import threading
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -22,7 +23,7 @@ from chattodo.board import BoardError, BoardStore, apply_operations
 from chatsite import __version__
 from chatsite.todo_config import TodoSettings
 from chatsite.todo_model import ModelClient, ModelError, enforce_scope, requires_confirmation
-from chatsite.todo_state import StateError, WebState
+from chatsite.todo_state import StateError, WebState, validate_layout
 
 COOKIE = "chattodo_session"
 MAX_BODY = 2_000_000
@@ -246,7 +247,40 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
 
     @app.get("/api/boards/{board_id}/export")
     async def export(board_id: str, owner=Depends(require_user)):
-        return JSONResponse(boards.get(board_id, owner), headers={"Content-Disposition": 'attachment; filename="chattodo-board.json"'})
+        data = boards.get(board_id, owner)
+        data["presentation"] = web.presentation(owner, board_id)
+        return JSONResponse(data, headers={"Content-Disposition": 'attachment; filename="chattodo-board.json"'})
+
+    @app.get("/api/boards/{board_id}/presentation")
+    async def presentation(board_id: str, owner=Depends(require_user)):
+        boards.get(board_id, owner)
+        return web.presentation(owner, board_id)
+
+    @app.patch("/api/boards/{board_id}/presentation")
+    async def save_presentation(board_id: str, request: Request, owner=Depends(require_user)):
+        body = await _body(request)
+        _fields(body, {"layout", "revision"}, {"layout", "revision"})
+        boards.get(board_id, owner)
+        return web.save_presentation(owner, board_id, body["layout"], _revision(body["revision"]))
+
+    def rollback_import(owner: str, board: dict) -> None:
+        board_id = board["id"]
+        try:
+            web.prepare_board_deletion(owner, board_id)
+        except Exception as exc:
+            # A failed Web journal must not prevent the independent domain rollback.
+            LOGGER.error("Todo import rollback journal unavailable: %s", type(exc).__name__)
+        try:
+            boards.delete(board_id, owner, board["revision"], confirm=True)
+        except Exception as exc:
+            if not isinstance(exc, BoardError) or exc.code != "not_found":
+                raise StateError("import_rollback_pending",
+                                 f"导入未完成，画布撤回结果尚未确认（{board_id}）。请在画布列表核对后明确删除，不要重复导入。", 500) from exc
+        try:
+            web.complete_board_deletion(owner, board_id)
+        except Exception as exc:
+            raise StateError("import_cleanup_pending",
+                             f"导入画布已撤回，关联状态清理待重试（{board_id}）。请重试删除此画布，不要重复导入。", 500) from exc
 
     @app.post("/api/import")
     async def import_board(request: Request, owner=Depends(require_user)):
@@ -255,12 +289,24 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
         data = payload["board"]
         if not isinstance(data, dict) or not isinstance(data.get("nodes"), list):
             raise StateError("bad_import", "导入文件必须包含 nodes 数组")
+        presentation = data.get("presentation")
+        if "presentation" in data:
+            if not isinstance(presentation, dict):
+                raise StateError("bad_import", "presentation 必须是布局对象")
+            _fields(presentation, {"layout", "revision"}, {"layout"})
+            validate_layout(presentation["layout"])
+            if "revision" in presentation:
+                _revision(presentation["revision"])
         result = boards.create(owner, title=data.get("title", "导入的任务树"), nodes=data["nodes"])
         try:
             if "view" in data:
                 boards.save_view(result["id"], owner, data["view"], view_revision=result["view_revision"])
-        except BoardError:
-            boards.delete(result["id"], owner, result["revision"], confirm=True)
+            if presentation:
+                web.save_presentation(owner, result["id"], presentation["layout"], 0)
+        except (BoardError, StateError, sqlite3.Error) as exc:
+            rollback_import(owner, result)
+            if isinstance(exc, sqlite3.Error):
+                raise StateError("import_storage_error", "导入存储失败，已撤回新画布。请稍后重试。", 500) from exc
             raise
         return {"board": boards.get(result["id"], owner)}
 
@@ -278,12 +324,13 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
             except BoardError as exc:
                 if exc.code != "not_found" or not receipt["existing"]:
                     raise
-            try:
-                web.complete_board_deletion(owner, board_id)
-            except Exception as exc:
-                LOGGER.error("Todo board state cleanup pending: %s", type(exc).__name__)
-                return {"ok": True, "board_deleted": True, "cleanup_pending": True,
-                        "message": "任务树已删除；关联会话清理待重试。请再次执行删除请求。"}
+        # Repeat cleanup even for a completed receipt to repair legacy late writes.
+        try:
+            web.complete_board_deletion(owner, board_id)
+        except Exception as exc:
+            LOGGER.error("Todo board state cleanup pending: %s", type(exc).__name__)
+            return {"ok": True, "board_deleted": True, "cleanup_pending": True,
+                    "message": "任务树已删除；关联会话清理待重试。请再次执行删除请求。"}
         return {"ok": True, "board_deleted": True, "cleanup_pending": False}
 
     @app.get("/api/boards/{board_id}/messages")

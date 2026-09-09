@@ -67,7 +67,7 @@ chatsite
 
 ## Todo 任务树工作台
 
-Todo 工作台提供独立多画布、标题优先的思维导图、右／上／下新增、原地标题编辑与可选 Markdown 详情、模型对话、持久化和撤销。手机支持双指缩放与平移。Web 由 ChatSite 提供，任务领域由 ChatTodo 提供；`pip install 'ChatSite[todo]'` 会安装兼容的领域包和服务依赖。
+安装 `"ChatSite[todo]>=0.1.4,<0.2.0"` 后执行 `chatsite todo serve`。SimpleMindMap 提供原生导图交互，Ant Design X 提供对话界面，ChatTodo 保持节点、版本、回执和撤销的领域职责；保留命名多画布、可选 Markdown 详情、手机触控和已有森林数据。前端随 Python 包分发，运行服务不需要 Node；维护界面源码时在 `frontend/todo/` 执行 `npm ci --ignore-scripts`、`npm test` 和 `npm run build`，并提交生成制品。
 
 - [工作台使用与验收](docs/todo-workbench.md)
 - [数据存储与模块接入](docs/todo-data-integration.md)：数据库、Node/Board/View、并发／幂等、Python/HTTP 与备份。

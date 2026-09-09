@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import pytest
 
@@ -36,10 +37,9 @@ def test_public_source_does_not_embed_local_deployment_policy():
         scanned.append(path.read_text(encoding="utf-8"))
     combined = "\n".join(scanned)
 
-    assert "/home/zhihong" not in combined
+    assert not re.search(r"/(?:home|Users)/[A-Za-z0-9_.-]+", combined)
     assert "SITES.md" not in combined
-    assert "rexwzh@lookeng.cn" not in combined
-    assert "Arch433" not in combined
+    assert not re.search(r"[A-Za-z0-9._%+-]+@(?!example\.(?:test|invalid|com)\b)[A-Za-z0-9.-]+\.[A-Za-z]{2,}", combined)
 
 
 def test_overleaf_web_settings_redact_secrets(monkeypatch, tmp_path):

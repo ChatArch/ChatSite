@@ -34,7 +34,11 @@ def test_docs_workflows_use_chatarch_site_url():
     assert "python -m twine check dist/*" in ci
     assert "python -m pip install --force-reinstall dist/*.whl" in ci
     assert '.[dev,docs,todo]' in ci
-    assert 'node --test tests/todo_frontend/*.cjs' in ci
+    assert 'working-directory: frontend/todo' in ci
+    assert 'npm ci --ignore-scripts' in ci
+    assert 'run: npm run check' in ci
+    assert 'git diff --exit-code -- src/chatsite/todo_static' in ci
+    assert 'node --test tests/todo_frontend/*.cjs' not in ci
 
 
 def test_mkdocs_material_renderer_and_public_domain():

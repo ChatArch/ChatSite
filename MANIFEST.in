@@ -1,0 +1,9 @@
+include frontend/todo/package.json
+include frontend/todo/package-lock.json
+include frontend/todo/index.html
+include frontend/todo/vite.config.mjs
+recursive-include frontend/todo/src *.mjs *.js *.jsx *.css *.woff2
+recursive-include frontend/todo/test *.mjs
+recursive-include frontend/todo/tools *.mjs
+recursive-include frontend/todo/public *
+prune frontend/todo/node_modules

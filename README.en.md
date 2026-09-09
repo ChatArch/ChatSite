@@ -39,15 +39,17 @@ python -m build
 
 ## CLI Tree
 
+Command names and signatures follow the live registered tree; annotations are translated below.
+
 ```text
 chatsite
 ├── --help  # Show this message and exit.
 ├── --version  # Show the version and exit.
 ├── --tree  # Print the registered CLI tree and exit.
 ├── --tree-brief  # Print the registered CLI tree without parameter signatures and exit.
-└── todo  # 任务树工作台。
-    ├── check [--profile PROFILE] [--home HOME]  # 验证配置及模型，会发送一次不修改任务的小请求。
-    └── serve [--host HOST] [--port PORT] [--profile PROFILE] [--home HOME]  # 启动任务树 Web 服务。
+└── todo  # Task-tree workbench.
+    ├── check [--profile PROFILE] [--home HOME]  # Check configuration and send one no-edit model request.
+    └── serve [--host HOST] [--port PORT] [--profile PROFILE] [--home HOME]  # Start the task-tree Web service.
 ```
 
 The public surface now includes Todo service commands. `--tree` retains parameter signatures while `--tree-brief` omits them.
@@ -67,4 +69,6 @@ Read `DEVELOP.md` and `AGENTS.md` before expanding commands, and keep `--tree`, 
 
 ## Todo workbench
 
-The Todo workbench provides named canvases, title-first brainstorming, three-direction node creation, inline titles, optional Markdown details, isolated model conversations and undo. Touch devices support pinch zoom and pan. Install `ChatSite[todo]` for compatible domain and service dependencies; run `chatsite todo serve` or `chatsite todo check`. The `chatsite-todo` ChatEnv provider owns configuration. Responses and Chat Completions are supported; Plan providers retain their explicit Plan endpoint without pay-as-you-go fallback.
+The Todo workbench uses SimpleMindMap for native map editing and Ant Design X for conversations, while ChatTodo retains ownership of nodes, revisions, receipts and undo. Named canvases, optional Markdown details, touch interaction and existing forest data remain supported. Install `"ChatSite[todo]>=0.1.4,<0.2.0"` and run `chatsite todo serve` or `chatsite todo check`; the Python package includes the frontend and needs no Node runtime. To maintain UI source, run `npm ci --ignore-scripts`, `npm test`, and `npm run build` in `frontend/todo/` and commit the generated assets.
+
+The `chatsite-todo` ChatEnv provider owns configuration. Responses and Chat Completions are supported; Plan providers retain their explicit Plan endpoint without pay-as-you-go fallback. See [workbench usage](docs/todo-workbench.md) and [data integration](docs/todo-data-integration.md).
