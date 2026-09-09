@@ -17,7 +17,42 @@ from chatsite import __version__
 @click.version_option(__version__, prog_name="chatsite")
 @add_tree_option()
 def main() -> None:
-    """ChatSite package scaffold for site workflows."""
+    """ChatArch 网站与服务入口。"""
+
+
+@main.group()
+def todo() -> None:
+    """任务树工作台。"""
+
+
+@todo.command()
+@click.option("--host", default=None, help="覆盖监听地址。")
+@click.option("--port", type=click.IntRange(1, 65535), default=None, help="覆盖监听端口。")
+@click.option("--profile", default=None, help="使用命名 ChatEnv profile。")
+@click.option("--home", type=click.Path(file_okay=False), default=None, help="ChatArch home。")
+def serve(host, port, profile, home):
+    """启动任务树 Web 服务。"""
+    from chatsite.todo_web import main as run_web
+    args = []
+    for name, value in (("host", host), ("port", port), ("profile", profile), ("home", home)):
+        if value is not None:
+            args.extend(["--" + name, str(value)])
+    try:
+        run_web(args)
+    except (ValueError, RuntimeError) as exc:
+        raise click.ClickException(str(exc)) from None
+
+
+@todo.command()
+@click.option("--profile", default=None, help="使用命名 ChatEnv profile。")
+@click.option("--home", type=click.Path(file_okay=False), default=None, help="ChatArch home。")
+def check(profile, home):
+    """验证配置及模型，会发送一次不修改任务的小请求。"""
+    from chatsite.todo_config import TodoSettings, probe_model
+    try:
+        probe_model(TodoSettings.from_profile(profile, home=home))
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from None
 
 
 if __name__ == "__main__":

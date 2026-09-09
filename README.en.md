@@ -44,10 +44,13 @@ chatsite
 ├── --help  # Show this message and exit.
 ├── --version  # Show the version and exit.
 ├── --tree  # Print the registered CLI tree and exit.
-└── --tree-brief  # Print the registered CLI tree without parameter signatures and exit.
+├── --tree-brief  # Print the registered CLI tree without parameter signatures and exit.
+└── todo  # 任务树工作台。
+    ├── check [--profile PROFILE] [--home HOME]  # 验证配置及模型，会发送一次不修改任务的小请求。
+    └── serve [--host HOST] [--port PORT] [--profile PROFILE] [--home HOME]  # 启动任务树 Web 服务。
 ```
 
-The current public surface has root options only, so the full and brief trees are identical. When real commands gain parameters, `--tree` retains their signatures while `--tree-brief` omits them.
+The public surface now includes Todo service commands. `--tree` retains parameter signatures while `--tree-brief` omits them.
 
 `chatsite hello` is not public CLI; it is a scaffold example leftover and must fail.
 
@@ -60,3 +63,8 @@ The current public surface has root options only, so the full and brief trees ar
 ## Development Notes
 
 Read `DEVELOP.md` and `AGENTS.md` before expanding commands, and keep `--tree`, `--tree-brief`, README, MkDocs, tests, and changelog synchronized.
+
+
+## Todo workbench
+
+The Todo workbench provides named canvases, title-first brainstorming, three-direction node creation, inline titles, optional Markdown details, isolated model conversations and undo. Touch devices support pinch zoom and pan. Install `ChatSite[todo]` for compatible domain and service dependencies; run `chatsite todo serve` or `chatsite todo check`. The `chatsite-todo` ChatEnv provider owns configuration. Responses and Chat Completions are supported; Plan providers retain their explicit Plan endpoint without pay-as-you-go fallback.

@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'">
+  <meta name="description" content="用任务树梳理想法，在画布中编辑，在对话中继续展开。">
+  <title>ChatTodo · 任务树工作台</title>
+  <link rel="stylesheet" href="/assets/fonts/font.css">
+  <link rel="stylesheet" href="/assets/style.css">
+  <script src="/assets/vendor/marked.umd.js" defer></script>
+  <script src="/assets/vendor/dompurify.min.js" defer></script>
+  <script src="/assets/core.js" defer></script>
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <section id="login-screen" class="login-screen" aria-labelledby="login-title">
+    <div class="login-card">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">⌘</span><span>ChatTodo</span></div>
+      <div class="login-heading">
+        <p class="eyebrow">任务树工作台</p>
+        <h1 id="login-title">让想法，逐步展开。</h1>
+        <p>用一棵任务树连接目标与行动，随时回到全局。</p>
+      </div>
+      <form id="login-form" class="login-form" method="post">
+        <div class="field">
+          <label for="login-email">邮箱</label>
+          <input id="login-email" name="email" type="email" autocomplete="username" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="登录邮箱" required>
+        </div>
+        <div class="field">
+          <label for="login-password">密码</label>
+          <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="输入密码" required>
+        </div>
+        <p id="login-error" class="error" role="alert" aria-live="assertive" hidden></p>
+        <button type="submit" class="primary login-submit">登录工作台 <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="login-note">使用站点账号登录，继续你的任务。</p>
+    </div>
+    <p class="login-caption">保持全局清晰，让每一步都有落点。</p>
+  </section>
+
+  <div id="app" hidden>
+    <header class="topbar">
+      <div class="topbar-main">
+        <button id="canvas-toggle" type="button" class="icon-button" aria-controls="canvas-sidebar" aria-expanded="true" aria-label="显示或收起画布栏" title="显示或收起画布栏">☰</button>
+        <div class="brand"><span class="brand-mark" aria-hidden="true">⌘</span><span>ChatTodo</span></div>
+        <span class="workspace-caption">想法与行动，在这里展开</span>
+        <div class="main-actions">
+          <button id="add-button" type="button" class="primary" title="新建节点；选中节点时添加子任务"><span aria-hidden="true">＋</span><span>新节点</span></button>
+          <button id="chat-toggle" type="button" aria-controls="chat-sidebar" aria-expanded="false" title="显示或收起模型对话"><span aria-hidden="true">◫</span><span>模型对话</span></button>
+        </div>
+        <div class="account">
+          <span id="user-email" class="user-email"></span>
+          <button id="logout" type="button" class="text-button" title="退出当前账号">退出</button>
+        </div>
+      </div>
+      <div class="workspace-toolbar" aria-label="任务树操作">
+        <div class="toolbar-group">
+          <button id="undo" type="button" class="text-button" title="撤销最近一次任务变更"><span aria-hidden="true">↶</span> 撤销</button>
+          <button id="history" type="button" class="text-button" title="查看任务树变更记录">变更记录</button>
+          <span class="separator" aria-hidden="true"></span>
+          <button id="export-board" type="button" class="text-button" title="导出当前任务树为 JSON 文件">导出</button>
+          <button id="import-board" type="button" class="text-button" title="从 JSON 文件导入任务树">导入</button>
+          <input id="import-file" type="file" accept="application/json,.json" aria-label="选择任务树 JSON 文件" hidden>
+          <button id="delete-board" type="button" class="text-button danger" title="删除当前任务树；操作前需要确认">删除任务树</button>
+        </div>
+        <span id="save-status" class="save-status" role="status" aria-live="polite">正在连接…</span>
+      </div>
+    </header>
+
+    <div id="global-error" class="global-error error" role="alert" aria-live="assertive" hidden></div>
+    <section id="conflict-panel" class="conflict-panel" role="alert" aria-labelledby="conflict-title" hidden>
+      <div><strong id="conflict-title">任务树已在其他位置更新</strong><p id="conflict-message"></p></div>
+      <div class="conflict-actions">
+        <button id="conflict-refresh" type="button" title="读取服务器上的最新版本">读取最新版本</button>
+        <button id="conflict-rebase" type="button" class="primary" title="基于最新版本重新尝试本次变更">重新应用变更</button>
+      </div>
+    </section>
+
+    <div id="layout" class="layout chat-hidden">
+      <aside id="canvas-sidebar" class="canvas-sidebar" aria-label="画布导航">
+        <div class="canvas-sidebar-heading"><h2>我的画布</h2><span id="canvas-count">0</span></div>
+        <p class="canvas-sidebar-note">总览、大项目，或一个具体想法。<br>每张画布独立展开。</p>
+        <button id="new-board" type="button" class="new-canvas" title="新建并命名画布">＋ 新建画布</button>
+        <select id="board-select" aria-label="当前画布" tabindex="-1" hidden></select>
+        <nav id="canvas-list" class="canvas-list" aria-label="切换画布"></nav>
+        <p class="canvas-sidebar-footer">先搭框架，再逐步深入。<br>只写标题，也是一张完整的思维导图。</p>
+      </aside>
+      <main id="canvas" class="canvas" aria-label="任务树画布" tabindex="0">
+        <div class="canvas-heading">
+          <p class="eyebrow">任务画布</p>
+          <h1 id="canvas-title">任务树</h1>
+          <p class="canvas-description">先写标题、搭框架，再和模型一起展开。</p>
+        </div>
+        <div id="scene" class="scene">
+          <svg id="edges" class="edges" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"></svg>
+          <div id="nodes"></div>
+        </div>
+        <div id="canvas-empty" class="canvas-empty" role="status">
+          <span class="empty-mark" aria-hidden="true">＋</span>
+          <h2>从一个想法开始</h2>
+          <p>从左侧新建画布，写下节点标题。<br>细节可以稍后补充，也可以交给模型展开。</p>
+        </div>
+        <div class="canvas-bottom">
+          <div class="zoom-tools" role="group" aria-label="画布视图">
+            <button id="zoom-out" type="button" class="icon-button" title="缩小画布" aria-label="缩小画布">−</button>
+            <output id="zoom-label" class="zoom-label" aria-label="当前缩放比例">100%</output>
+            <button id="zoom-in" type="button" class="icon-button" title="放大画布" aria-label="放大画布">＋</button>
+            <span class="separator" aria-hidden="true"></span>
+            <button id="fit" type="button" class="icon-button" title="适应全部节点" aria-label="适应全部节点">⛶</button>
+          </div>
+          <p class="canvas-hint">点击改标题 · 右侧加子节点 · 上下加同级 · 详情可选</p>
+          <div class="legend" aria-label="任务状态图例">
+            <span data-status="pending"><i aria-hidden="true"></i>待开始</span>
+            <span data-status="in_progress"><i aria-hidden="true"></i>进行中</span>
+            <span data-status="completed"><i aria-hidden="true"></i>已完成</span>
+            <span data-status="cancelled"><i aria-hidden="true"></i>已取消</span>
+          </div>
+        </div>
+
+        <section id="detail" class="detail" role="region" aria-labelledby="detail-title">
+          <div id="detail-bar" class="detail-bar" title="拖动移动节点窗口">
+            <span class="detail-dot" aria-hidden="true"></span>
+            <span>节点内容</span>
+            <span class="drag-hint" aria-hidden="true">⠿</span>
+            <button id="detail-close" type="button" class="icon-button" title="关闭节点窗口" aria-label="关闭节点窗口">×</button>
+          </div>
+          <div class="detail-heading">
+            <h2 id="detail-title">节点内容</h2>
+            <span id="detail-status" class="status-badge"></span>
+          </div>
+          <div class="detail-tabs" role="tablist" aria-label="节点内容模式">
+            <button id="tab-preview" type="button" class="active" role="tab" aria-selected="true" aria-controls="preview-panel">预览</button>
+            <button id="tab-edit" type="button" role="tab" aria-selected="false" aria-controls="edit-panel">编辑</button>
+            <span>可选 · Markdown 内容</span>
+          </div>
+          <div class="detail-body">
+            <div id="preview-panel" role="tabpanel" aria-labelledby="tab-preview">
+              <div id="node-preview" class="md-body"></div>
+            </div>
+            <div id="edit-panel" role="tabpanel" aria-labelledby="tab-edit" hidden>
+              <div class="field">
+                <label for="node-title-input">标题</label>
+                <input id="node-title-input" type="text" placeholder="给这个任务起一个清晰的名字" autocomplete="off" required>
+              </div>
+              <div class="field">
+                <label for="node-status-input">任务状态</label>
+                <select id="node-status-input">
+                  <option value="pending">待开始</option>
+                  <option value="in_progress">进行中</option>
+                  <option value="completed">已完成</option>
+                  <option value="cancelled">已取消</option>
+                </select>
+              </div>
+              <div class="field body-field">
+                <label for="node-body-input">内容 <span class="muted">支持 Markdown</span></label>
+                <textarea id="node-body-input" spellcheck="false" placeholder="可选：补充想法、PRD 或实施步骤；也可以暂时留空。" rows="10"></textarea>
+              </div>
+            </div>
+          </div>
+          <footer class="detail-footer">
+            <div class="detail-secondary">
+              <button id="move-node" type="button" class="text-button" title="调整节点的父子关系">移动</button>
+              <button id="delete-node" type="button" class="text-button danger" title="删除该节点；操作前需要确认">删除</button>
+            </div>
+            <button id="detail-chat" type="button" title="围绕当前节点与模型讨论">讨论此节点</button>
+            <button id="save-node" type="button" class="primary">保存</button>
+          </footer>
+        </section>
+      </main>
+
+      <aside id="chat-sidebar" class="chat-sidebar" aria-labelledby="chat-title">
+        <div class="chat-head">
+          <div class="assistant-icon" aria-hidden="true">✧</div>
+          <div><h2 id="chat-title">一起梳理任务</h2><p>围绕同一棵树，继续展开。</p></div>
+          <button id="chat-hide" type="button" class="icon-button" title="收起模型对话" aria-label="收起模型对话">›</button>
+        </div>
+        <div class="chat-scope">
+          <p class="scope-label">本轮对话范围</p>
+          <div class="scope-line"><span class="scope-icon" aria-hidden="true">◎</span><strong id="scope-title">整棵任务树</strong><button id="scope-all" type="button" class="text-button" title="切换为整棵任务树">切换到全局</button></div>
+          <p id="model-info" class="model-info" aria-live="polite"></p>
+        </div>
+        <div id="messages" class="messages" role="log" aria-label="模型对话记录" aria-live="polite" aria-relevant="additions text"></div>
+        <div class="chat-compose">
+          <p id="chat-busy" class="chat-busy" role="status" aria-live="polite" hidden>模型正在处理，请稍候…</p>
+          <p id="chat-error" class="error" role="alert" aria-live="assertive" hidden></p>
+          <form id="chat-form" class="chat-form" method="post">
+            <label class="sr-only" for="chat-input">描述你的任务或想法</label>
+            <textarea id="chat-input" name="message" rows="3" placeholder="描述你的想法，或继续拆分当前任务…" required></textarea>
+            <div class="compose-footer"><span>围绕全局或选中的节点讨论</span><button id="send-chat" type="submit" class="primary" title="发送消息" aria-label="发送消息">发送 <span aria-hidden="true">↑</span></button></div>
+          </form>
+          <p class="chat-note">模型变更会同步到任务树，请留意变更回执。</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <dialog id="modal" class="modal" aria-labelledby="modal-title">
+    <header class="modal-heading"><h2 id="modal-title"></h2></header>
+    <div id="modal-content" class="modal-content"></div>
+    <footer class="modal-footer"><button id="modal-cancel" type="button">取消</button><button id="modal-ok" type="button" class="primary">确认</button></footer>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+  <noscript><div class="noscript-notice" role="alert">此工作台需要 JavaScript 才能登录和编辑任务。请启用后刷新页面。</div></noscript>
+</body>
+</html>

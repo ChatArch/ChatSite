@@ -24,7 +24,10 @@ def test_checked_in_cli_trees_match_registered_runtime_output():
 
     assert full.exit_code == 0
     assert brief.exit_code == 0
-    assert full.output == brief.output
+    assert full.output != brief.output
+    assert "[--profile PROFILE]" in full.output
+    assert "[--profile PROFILE]" not in brief.output
+    assert "todo" in full.output and "todo" in brief.output
     tree_block = f"```text\n{full.output}```"
     for relative_path in (
         "README.md",

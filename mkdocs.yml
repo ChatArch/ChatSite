@@ -1,5 +1,5 @@
 site_name: ChatSite 文档
-site_description: ChatArch site-workflow package scaffold
+site_description: ChatArch Web/service entrypoints and collaborative workbenches
 site_url: https://arch.gh.wzhecnu.cn/ChatSite/
 repo_url: https://github.com/ChatArch/ChatSite
 repo_name: ChatArch/ChatSite
@@ -38,6 +38,8 @@ plugins:
             首页: Home
             CLI 树: CLI Tree
             Overleaf 编辑器: Overleaf Editor
+            Todo 工作台: Todo Workbench
+            数据存储与接入: Data and Integration
 
 markdown_extensions:
   - admonition
@@ -66,3 +68,5 @@ nav:
   - 首页: index.md
   - CLI 树: cli-tree.md
   - Overleaf 编辑器: overleaf-editor-web.md
+  - Todo 工作台: todo-workbench.md
+  - 数据存储与接入: todo-data-integration.md
