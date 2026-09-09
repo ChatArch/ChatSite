@@ -8,6 +8,24 @@ on:
   pull_request:
 
 jobs:
+  todo-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/todo/package-lock.json
+      - name: Install locked Todo frontend dependencies
+        working-directory: frontend/todo
+        run: npm ci --ignore-scripts --no-audit --no-fund --registry=https://registry.npmjs.org
+      - name: Test, rebuild, and verify Todo frontend
+        working-directory: frontend/todo
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
+        run: npm run check
+      - run: git diff --exit-code -- src/chatsite/todo_static
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -29,7 +47,6 @@ jobs:
         with:
           node-version: "22"
       - run: python -m pytest -q
-      - run: node --test tests/todo_frontend/*.cjs
       - run: chatsite --version
       - run: chatsite --tree
       - run: chatsite --tree-brief
