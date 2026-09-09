@@ -12,6 +12,17 @@ import secrets
 import sqlite3
 import time
 
+PRESENTATION_LAYOUTS = frozenset({
+    "logicalStructure", "mindMap", "organizationStructure",
+    "catalogOrganization", "timeline", "fishbone",
+})
+
+
+def validate_layout(value: str) -> str:
+    if not isinstance(value, str) or value not in PRESENTATION_LAYOUTS:
+        raise StateError("invalid_layout", "不支持的导图布局")
+    return value
+
 
 class StateError(Exception):
     def __init__(self, code: str, message: str, status: int = 400):
@@ -83,6 +94,10 @@ class WebState:
                 CREATE TABLE IF NOT EXISTS board_deletions(
                     owner TEXT NOT NULL, board_id TEXT NOT NULL, state TEXT NOT NULL,
                     created_at REAL NOT NULL, updated_at REAL NOT NULL,
+                    PRIMARY KEY(owner,board_id));
+                CREATE TABLE IF NOT EXISTS presentations(
+                    owner TEXT NOT NULL, board_id TEXT NOT NULL,
+                    layout TEXT NOT NULL, revision INTEGER NOT NULL,
                     PRIMARY KEY(owner,board_id));
             """)
 
@@ -261,6 +276,31 @@ class WebState:
             db.execute("UPDATE proposals SET applied=1,result=? WHERE id=? AND owner=? AND board_id=?",
                        (_dump(result), proposal_id, owner, board_id))
 
+    def presentation(self, owner: str, board_id: str) -> dict:
+        """Web-only layout preferences; task facts and domain view are separate."""
+        with self.connection() as db:
+            row = db.execute("SELECT layout,revision FROM presentations WHERE owner=? AND board_id=?",
+                             (owner, board_id)).fetchone()
+            return dict(row) if row else {"layout": "logicalStructure", "revision": 0}
+
+    def save_presentation(self, owner: str, board_id: str, layout: str, revision: int) -> dict:
+        layout = validate_layout(layout)
+        if type(revision) is not int or revision < 0:
+            raise StateError("bad_revision", "revision 必须是非负整数")
+        with self.connection() as db:
+            row = db.execute("SELECT layout,revision FROM presentations WHERE owner=? AND board_id=?",
+                             (owner, board_id)).fetchone()
+            current = dict(row) if row else {"layout": "logicalStructure", "revision": 0}
+            if current["revision"] != revision:
+                raise StateError("presentation_conflict", "布局已在其他窗口更新，请读取最新状态", 409)
+            if current["layout"] == layout:
+                return current
+            result = {"layout": layout, "revision": revision + 1}
+            db.execute("INSERT INTO presentations VALUES(?,?,?,?) "
+                       "ON CONFLICT(owner,board_id) DO UPDATE SET layout=excluded.layout,revision=excluded.revision",
+                       (owner, board_id, layout, result["revision"]))
+            return result
+
     def prepare_board_deletion(self, owner: str, board_id: str) -> dict:
         now = time.time()
         with self.connection() as db:
@@ -282,6 +322,7 @@ class WebState:
         db.execute("DELETE FROM conversations WHERE owner=? AND board_id=?", (owner, board_id))
         db.execute("DELETE FROM chat_requests WHERE owner=? AND board_id=?", (owner, board_id))
         db.execute("DELETE FROM proposals WHERE owner=? AND board_id=?", (owner, board_id))
+        db.execute("DELETE FROM presentations WHERE owner=? AND board_id=?", (owner, board_id))
 
     def complete_board_deletion(self, owner: str, board_id: str) -> None:
         with self.connection() as db:

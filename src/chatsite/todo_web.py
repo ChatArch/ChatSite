@@ -22,7 +22,7 @@ from chattodo.board import BoardError, BoardStore, apply_operations
 from chatsite import __version__
 from chatsite.todo_config import TodoSettings
 from chatsite.todo_model import ModelClient, ModelError, enforce_scope, requires_confirmation
-from chatsite.todo_state import StateError, WebState
+from chatsite.todo_state import StateError, WebState, validate_layout
 
 COOKIE = "chattodo_session"
 MAX_BODY = 2_000_000
@@ -246,7 +246,21 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
 
     @app.get("/api/boards/{board_id}/export")
     async def export(board_id: str, owner=Depends(require_user)):
-        return JSONResponse(boards.get(board_id, owner), headers={"Content-Disposition": 'attachment; filename="chattodo-board.json"'})
+        data = boards.get(board_id, owner)
+        data["presentation"] = web.presentation(owner, board_id)
+        return JSONResponse(data, headers={"Content-Disposition": 'attachment; filename="chattodo-board.json"'})
+
+    @app.get("/api/boards/{board_id}/presentation")
+    async def presentation(board_id: str, owner=Depends(require_user)):
+        boards.get(board_id, owner)
+        return web.presentation(owner, board_id)
+
+    @app.patch("/api/boards/{board_id}/presentation")
+    async def save_presentation(board_id: str, request: Request, owner=Depends(require_user)):
+        boards.get(board_id, owner)
+        body = await _body(request)
+        _fields(body, {"layout", "revision"}, {"layout", "revision"})
+        return web.save_presentation(owner, board_id, body["layout"], _revision(body["revision"]))
 
     @app.post("/api/import")
     async def import_board(request: Request, owner=Depends(require_user)):
@@ -255,12 +269,23 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
         data = payload["board"]
         if not isinstance(data, dict) or not isinstance(data.get("nodes"), list):
             raise StateError("bad_import", "导入文件必须包含 nodes 数组")
+        presentation = data.get("presentation")
+        if "presentation" in data:
+            if not isinstance(presentation, dict):
+                raise StateError("bad_import", "presentation 必须是布局对象")
+            _fields(presentation, {"layout", "revision"}, {"layout"})
+            validate_layout(presentation["layout"])
+            if "revision" in presentation:
+                _revision(presentation["revision"])
         result = boards.create(owner, title=data.get("title", "导入的任务树"), nodes=data["nodes"])
         try:
             if "view" in data:
                 boards.save_view(result["id"], owner, data["view"], view_revision=result["view_revision"])
-        except BoardError:
+            if presentation:
+                web.save_presentation(owner, result["id"], presentation["layout"], 0)
+        except (BoardError, StateError):
             boards.delete(result["id"], owner, result["revision"], confirm=True)
+            web.delete_board_state(owner, result["id"])
             raise
         return {"board": boards.get(result["id"], owner)}
 
