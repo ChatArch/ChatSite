@@ -6,6 +6,7 @@ const state = {
   selectedProject: null,
   selectedFile: null,
   conversation: null,
+  csrfToken: null,
 };
 
 const $ = (id) => document.getElementById(id);
@@ -205,9 +206,13 @@ function toggleLang() {
 
 async function api(path, options = {}) {
   const opts = { credentials: 'same-origin', ...options };
+  const method = (opts.method || 'GET').toUpperCase();
   if (opts.body && typeof opts.body !== 'string') {
     opts.headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
     opts.body = JSON.stringify(opts.body);
+  }
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && state.csrfToken) {
+    opts.headers = { ...(opts.headers || {}), 'X-CSRF-Token': state.csrfToken };
   }
   const response = await fetch(path, opts);
   const text = await response.text();
@@ -319,12 +324,14 @@ function renderFiles() {
 }
 
 async function loadMe() {
-  const me = await api('/api/me');
+  const me = await api('/login/session');
   if (!me.authenticated) {
+    state.csrfToken = null;
     showLogin();
     return;
   }
   state.user = me;
+  state.csrfToken = me.csrf_token || null;
   $('userBadge').textContent = me.email || t('signedIn');
   showApp();
   await Promise.all([loadSettings(), loadConversations(), loadProjects()]);
@@ -589,12 +596,13 @@ function bind() {
     try {
       const data = await api('/api/login', { method: 'POST', body: { email: $('loginEmail').value, password: $('loginPassword').value } });
       state.user = data;
+      state.csrfToken = data.csrf_token || null;
       await loadMe();
     } catch (error) {
       $('loginError').textContent = error.message;
     }
   });
-  $('logoutButton').addEventListener('click', async () => { await api('/api/logout', { method: 'POST', body: {} }); showLogin(); });
+  $('logoutButton').addEventListener('click', async () => { await api('/api/logout', { method: 'POST', body: {} }); state.csrfToken = null; showLogin(); });
   $('settingsButton').addEventListener('click', () => $('settingsDialog').showModal());
   $('closeSettingsButton').addEventListener('click', () => $('settingsDialog').close());
   $('settingsForm').addEventListener('submit', saveSettings);

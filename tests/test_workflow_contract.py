@@ -35,7 +35,7 @@ def test_docs_workflows_use_chatarch_site_url():
     assert "python -m pip install --force-reinstall dist/*.whl" in ci
     assert "assert 'site-packages' in chatsite.__file__" in ci
     assert "working-directory: /" in ci
-    assert '.[dev,docs,todo]' in ci
+    assert '.[dev,docs,overleaf,todo]' in ci
     assert 'working-directory: frontend/todo' in ci
     assert 'npm ci --ignore-scripts' in ci
     assert 'run: npm run check' in ci

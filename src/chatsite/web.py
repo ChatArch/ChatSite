@@ -11,7 +11,6 @@ import json
 import mimetypes
 import os
 import re
-import secrets
 import sqlite3
 import time
 import traceback
@@ -28,12 +27,24 @@ from typing import Any
 
 from chatol.client import DEFAULT_COOKIE_NAME, OverleafClient, _decode_socket_io_payload
 from chatol.errors import ChatOLError, CompileError, FileOperationError, UnsupportedRouteError
+from chatlogin import (
+    AccessDenied,
+    CallbackBackend,
+    Principal,
+    SessionManager,
+    SQLiteSessionStore,
+    StoreFull,
+    require_csrf,
+    safe_next,
+)
+from chatlogin.ui import LoginUI
 
 SESSION_COOKIE = "chatsite_session"
 MAX_JSON_BODY = 2_000_000
 MAX_TEXT_BODY = 1_000_000
 DEFAULT_PORT = 18082
 DEFAULT_DATA_DIR = Path.home() / ".chatarch" / "chatsite"
+LOGIN_ASSETS = {"login.css": "text/css; charset=utf-8", "login.js": "application/javascript; charset=utf-8"}
 
 
 class WebError(Exception):
@@ -61,6 +72,9 @@ class AppConfig:
     openai_api_key: str
     openai_base_url: str
     session_ttl_seconds: int
+    public_url: str
+    allowed_origins: frozenset[str]
+    secure_cookie: bool
 
     @classmethod
     def from_env(cls, *, host: str | None = None, port: int | None = None, data_dir: str | None = None) -> "AppConfig":
@@ -68,6 +82,14 @@ class AppConfig:
         admin_password = _secret_from_env_or_file("CHATSITE_WEB_ADMIN_PASSWORD", "CHATSITE_WEB_ADMIN_PASSWORD_FILE")
         if not admin_password:
             raise RuntimeError("CHATSITE_WEB_ADMIN_PASSWORD or CHATSITE_WEB_ADMIN_PASSWORD_FILE is required")
+        public_url = _origin_url(os.getenv("CHATSITE_WEB_PUBLIC_URL") or f"http://{host or os.getenv('CHATSITE_WEB_HOST', '127.0.0.1')}:{port or os.getenv('CHATSITE_WEB_PORT', str(DEFAULT_PORT))}")
+        origins = {public_url}
+        for origin in (os.getenv("CHATSITE_WEB_ALLOWED_ORIGINS") or "").split(","):
+            if origin.strip():
+                origins.add(_origin_url(origin.strip()))
+        secure = (os.getenv("CHATSITE_WEB_SECURE_COOKIE") or "").lower()
+        if secure not in {"", "true", "false", "1", "0"}:
+            raise RuntimeError("CHATSITE_WEB_SECURE_COOKIE must be true or false")
         return cls(
             host=host or os.getenv("CHATSITE_WEB_HOST", "127.0.0.1"),
             port=int(port or os.getenv("CHATSITE_WEB_PORT", str(DEFAULT_PORT))),
@@ -101,6 +123,9 @@ class AppConfig:
             or os.getenv("OPENAI_API_KEY", ""),
             openai_base_url=(os.getenv("OPENAI_BASE_URL") or os.getenv("OPENAI_API_BASE") or "https://api.openai.com/v1").rstrip("/"),
             session_ttl_seconds=int(os.getenv("CHATSITE_WEB_SESSION_TTL_SECONDS", str(60 * 60 * 24 * 14))),
+            public_url=public_url,
+            allowed_origins=frozenset(origins),
+            secure_cookie=secure in {"true", "1"} if secure else public_url.startswith("https://"),
         )
 
 
@@ -126,6 +151,7 @@ class DataStore:
                 secret INTEGER NOT NULL DEFAULT 0,
                 updated_at REAL NOT NULL
             );
+            -- Retained for old rows/backups only; ChatLogin auth uses auth.sqlite3.
             CREATE TABLE IF NOT EXISTS sessions (
                 token_hash TEXT PRIMARY KEY,
                 user_email TEXT NOT NULL,
@@ -181,36 +207,6 @@ class DataStore:
                     (key, str(value), secret_flag, now),
                 )
         self.conn.commit()
-
-    def create_session(self, user_email: str) -> str:
-        token = secrets.token_urlsafe(40)
-        now = time.time()
-        self.conn.execute(
-            "INSERT INTO sessions(token_hash, user_email, created_at, expires_at) VALUES (?, ?, ?, ?)",
-            (_hash_token(token), user_email, now, now + self.config.session_ttl_seconds),
-        )
-        self.conn.commit()
-        return token
-
-    def validate_session(self, token: str | None) -> str | None:
-        if not token:
-            return None
-        now = time.time()
-        row = self.conn.execute(
-            "SELECT user_email, expires_at FROM sessions WHERE token_hash = ?", (_hash_token(token),)
-        ).fetchone()
-        if not row:
-            return None
-        if float(row["expires_at"]) < now:
-            self.conn.execute("DELETE FROM sessions WHERE token_hash = ?", (_hash_token(token),))
-            self.conn.commit()
-            return None
-        return str(row["user_email"])
-
-    def delete_session(self, token: str | None) -> None:
-        if token:
-            self.conn.execute("DELETE FROM sessions WHERE token_hash = ?", (_hash_token(token),))
-            self.conn.commit()
 
     def settings(self, *, include_secrets: bool = False) -> dict[str, Any]:
         rows = self.conn.execute("SELECT key, value, secret FROM settings").fetchall()
@@ -573,10 +569,125 @@ def handle_overleaf_tool(store: DataStore, arguments: dict[str, Any] | str) -> d
         return {"ok": False, "error": _safe_error(exc), "type": type(exc).__name__}
 
 
+def _credential_binding(config: AppConfig) -> str:
+    digest = hashlib.sha256()
+    digest.update(config.admin_email.encode("utf-8"))
+    digest.update(b"\0")
+    digest.update(config.admin_password.encode("utf-8"))
+    return digest.hexdigest()
+
+
+def _constant_equal(left: str, right: str) -> bool:
+    return hmac.compare_digest(hashlib.sha256(left.encode()).digest(), hashlib.sha256(right.encode()).digest())
+
+
+@dataclass
+class HubAuth:
+    config: AppConfig
+    sessions: SessionManager
+    backend: CallbackBackend
+    login_ui: LoginUI
+
+    @classmethod
+    def create(cls, config: AppConfig, *, login_ui: LoginUI | None = None) -> "HubAuth":
+        binding = _credential_binding(config)
+
+        def verify(email: str, password: str):
+            if not _constant_equal(email, config.admin_email):
+                return None
+            if not _constant_equal(password, config.admin_password):
+                return None
+            return Principal(config.admin_email)
+
+        store = SQLiteSessionStore(config.data_dir / "auth.sqlite3", max_sessions=1024)
+        sessions = SessionManager(store, instance="chatsite-hub-" + binding[:16], ttl=config.session_ttl_seconds)
+        ui = login_ui or LoginUI(title="ChatSite", subtitle="使用已配置的 ChatSite 账号登录后继续。", palette="indigo", guest_url=None)
+        return cls(config=config, sessions=sessions, backend=CallbackBackend(verify), login_ui=ui)
+
+    def _valid_session(self, token: str | None):
+        session = self.sessions.resolve(token)
+        if session is None:
+            return None
+        if session.principal.user_id != self.config.admin_email:
+            self.sessions.revoke(token)
+            return None
+        return session
+
+    def session_payload(self, token: str | None) -> dict[str, Any] | None:
+        session = self._valid_session(token)
+        if session is None:
+            return None
+        return {"authenticated": True, "email": session.principal.user_id, "csrf_token": session.csrf_token}
+
+    def require_read(self, token: str | None) -> str:
+        session = self._valid_session(token)
+        if session is None:
+            raise WebError(HTTPStatus.UNAUTHORIZED, "auth_required", "Login required")
+        return str(session.principal.user_id)
+
+    def require_write(self, token: str | None, csrf: str | None) -> str:
+        session = self._valid_session(token)
+        if session is None:
+            raise WebError(HTTPStatus.UNAUTHORIZED, "auth_required", "Login required")
+        try:
+            require_csrf(session, csrf)
+        except AccessDenied:
+            raise WebError(HTTPStatus.FORBIDDEN, "bad_csrf", "Session validation failed; sign in again and retry") from None
+        return str(session.principal.user_id)
+
+    def login(self, payload: dict[str, Any], previous_token: str | None, csrf: str | None) -> tuple[dict[str, Any], str]:
+        extra = set(payload) - {"email", "username", "password", "next"}
+        if extra or "password" not in payload or not ({"email", "username"} & set(payload)):
+            raise WebError(HTTPStatus.BAD_REQUEST, "bad_fields", "Request fields are missing or unsupported")
+        email, username = payload.get("email"), payload.get("username")
+        if email is not None and username is not None and email != username:
+            raise WebError(HTTPStatus.BAD_REQUEST, "bad_login_alias", "Login account fields do not match")
+        login_email = email if email is not None else username
+        password = payload["password"]
+        if not isinstance(login_email, str) or not isinstance(password, str):
+            raise WebError(HTTPStatus.UNAUTHORIZED, "bad_login", "Invalid email or password")
+        if payload.get("next") is not None and not isinstance(payload["next"], str):
+            raise WebError(HTTPStatus.BAD_REQUEST, "bad_next", "Login redirect is invalid")
+        prior = self._valid_session(previous_token)
+        if prior is not None and csrf is not None:
+            try:
+                require_csrf(prior, csrf)
+            except AccessDenied:
+                raise WebError(HTTPStatus.FORBIDDEN, "bad_csrf", "Session validation failed; sign in again and retry") from None
+        principal = self.backend.authenticate(login_email.strip(), password)
+        if principal is None:
+            raise WebError(HTTPStatus.UNAUTHORIZED, "bad_login", "Invalid email or password")
+        try:
+            issued = self.sessions.issue(principal, previous_token=previous_token if prior is not None else None)
+        except StoreFull:
+            raise WebError(HTTPStatus.SERVICE_UNAVAILABLE, "auth_store_full", "Login session storage is full; retry later") from None
+        return ({
+            "authenticated": True,
+            "email": principal.user_id,
+            "csrf_token": issued.session.csrf_token,
+            "next": safe_next(payload.get("next"), default="/"),
+        }, issued.token)
+
+    def logout(self, token: str | None, csrf: str | None) -> None:
+        self.require_write(token, csrf)
+        self.sessions.revoke(token)
+
+    def login_page(self, next_url: str | None = None) -> str:
+        context = {
+            "login_url": "/api/login",
+            "session_url": "/login/session",
+            "logout_url": "/api/logout",
+            "assets_path": "/login/assets",
+            "next": safe_next(next_url, default="/"),
+        }
+        return self.login_ui.render(context)
+
+
 class ChatOLWebHandler(BaseHTTPRequestHandler):
     server_version = "ChatSiteOverleaf/0.1"
     config: AppConfig
     store: DataStore
+    auth: HubAuth
 
     def log_message(self, fmt: str, *args: object) -> None:
         print(f"{self.address_string()} - {fmt % args}")
@@ -598,9 +709,21 @@ class ChatOLWebHandler(BaseHTTPRequestHandler):
         try:
             parsed = urllib.parse.urlparse(self.path)
             path = parsed.path
+            self._check_origin(method)
+            if path == "/login" and method == "GET":
+                return self._login_page((urllib.parse.parse_qs(parsed.query).get("next") or [None])[0])
+            if path.startswith("/login/assets/") and method == "GET":
+                return self._login_asset(path.removeprefix("/login/assets/"))
+            if path == "/login/session" and method == "GET":
+                current = self.auth.session_payload(self._session_token())
+                return self._json(200, current if current is not None else {"authenticated": False})
             if path in {"/", "/index.html"}:
+                if self.auth.session_payload(self._session_token()) is None:
+                    return self._redirect("/login?next=/")
                 return self._send_static("index.html")
             if path in {"/overleaf", "/overleaf/", "/overleaf.html"}:
+                if self.auth.session_payload(self._session_token()) is None:
+                    return self._redirect("/login?next=/overleaf")
                 return self._send_static("overleaf.html")
             if path.startswith("/static/"):
                 return self._send_static(path.removeprefix("/static/"))
@@ -609,9 +732,14 @@ class ChatOLWebHandler(BaseHTTPRequestHandler):
             if path == "/api/login" and method == "POST":
                 return self._login()
             if path == "/api/me":
-                user = self.store.validate_session(self._session_token())
-                return self._json(200, {"authenticated": bool(user), "email": user})
-            user = self._require_user()
+                current = self.auth.session_payload(self._session_token())
+                return self._json(200, current if current is not None else {"authenticated": False, "email": None})
+            if path == "/api/session":
+                current = self.auth.session_payload(self._session_token())
+                if current is None:
+                    raise WebError(HTTPStatus.UNAUTHORIZED, "auth_required", "Login required")
+                return self._json(200, current)
+            user = self._require_user(method)
             if path == "/api/logout" and method == "POST":
                 return self._logout()
             if path == "/api/settings":
@@ -664,22 +792,18 @@ class ChatOLWebHandler(BaseHTTPRequestHandler):
 
     def _login(self) -> None:
         payload = self._read_json()
-        email = str(payload.get("email") or "").strip()
-        password = str(payload.get("password") or "")
-        if email != self.config.admin_email or not hmac.compare_digest(password, self.config.admin_password):
-            raise WebError(HTTPStatus.UNAUTHORIZED, "bad_login", "Invalid email or password")
-        token = self.store.create_session(email)
+        data, token = self.auth.login(payload, self._session_token(), self.headers.get("X-CSRF-Token"))
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Set-Cookie", f"{SESSION_COOKIE}={token}; HttpOnly; SameSite=Lax; Path=/; Max-Age={self.config.session_ttl_seconds}")
+        self.send_header("Set-Cookie", self._session_cookie(token))
         self.end_headers()
-        self.wfile.write(json.dumps({"authenticated": True, "email": email}).encode("utf-8"))
+        self.wfile.write(json.dumps(data).encode("utf-8"))
 
     def _logout(self) -> None:
-        self.store.delete_session(self._session_token())
+        self.auth.logout(self._session_token(), self.headers.get("X-CSRF-Token"))
         self.send_response(200)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Set-Cookie", f"{SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0")
+        self.send_header("Set-Cookie", self._expired_session_cookie())
         self.end_headers()
         self.wfile.write(b'{"ok": true}')
 
@@ -724,6 +848,33 @@ class ChatOLWebHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def _login_page(self, next_url: str | None) -> None:
+        data = self.auth.login_page(next_url).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _login_asset(self, name: str) -> None:
+        media_type = LOGIN_ASSETS.get(name)
+        if media_type is None:
+            raise WebError(HTTPStatus.NOT_FOUND, "not_found", "Static asset not found")
+        data = resources.files("chatlogin").joinpath("web", "assets", name).read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", media_type)
+        self.send_header("Cache-Control", "public, max-age=3600")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _redirect(self, location: str) -> None:
+        self.send_response(303)
+        self.send_header("Location", location)
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+
     def _json(self, status: int, payload: dict[str, Any]) -> None:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(int(status))
@@ -750,11 +901,26 @@ class ChatOLWebHandler(BaseHTTPRequestHandler):
         morsel = cookie.get(SESSION_COOKIE)
         return morsel.value if morsel else None
 
-    def _require_user(self) -> str:
-        user = self.store.validate_session(self._session_token())
-        if not user:
-            raise WebError(HTTPStatus.UNAUTHORIZED, "auth_required", "Login required")
-        return user
+    def _require_user(self, method: str) -> str:
+        if method in {"GET", "HEAD", "OPTIONS"}:
+            return self.auth.require_read(self._session_token())
+        return self.auth.require_write(self._session_token(), self.headers.get("X-CSRF-Token"))
+
+    def _check_origin(self, method: str) -> None:
+        if method in {"GET", "HEAD", "OPTIONS"}:
+            return
+        origins = self.headers.get_all("Origin", [])
+        origin = origins[0].rstrip("/") if len(origins) == 1 else None
+        if len(origins) > 1 or (origin and origin not in self.config.allowed_origins) or self.headers.get("Sec-Fetch-Site") == "cross-site":
+            raise WebError(HTTPStatus.FORBIDDEN, "bad_origin", "Cross-site write request rejected")
+
+    def _session_cookie(self, token: str) -> str:
+        secure = "; Secure" if self.config.secure_cookie else ""
+        return f"{SESSION_COOKIE}={token}; HttpOnly{secure}; SameSite=Lax; Path=/; Max-Age={self.config.session_ttl_seconds}"
+
+    def _expired_session_cookie(self) -> str:
+        secure = "; Secure" if self.config.secure_cookie else ""
+        return f"{SESSION_COOKIE}=; HttpOnly{secure}; SameSite=Lax; Path=/; Max-Age=0"
 
 
 def _read_env_file(path_value: str | None) -> dict[str, str]:
@@ -788,8 +954,24 @@ def _secret_from_env_or_file(env_name: str, file_env_name: str) -> str:
     return path.read_text(errors="replace").strip()
 
 
-def _hash_token(token: str) -> str:
-    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+def _origin_url(value: str) -> str:
+    try:
+        part = urllib.parse.urlsplit(value)
+        _ = part.port
+    except ValueError:
+        raise RuntimeError("CHATSITE_WEB_PUBLIC_URL/ALLOWED_ORIGINS must contain valid URLs") from None
+    if (
+        part.scheme not in {"http", "https"}
+        or not part.hostname
+        or part.username
+        or part.password
+        or part.path not in {"", "/"}
+        or part.query
+        or part.fragment
+        or any(char.isspace() for char in value)
+    ):
+        raise RuntimeError("CHATSITE_WEB_PUBLIC_URL/ALLOWED_ORIGINS must be HTTP(S) origins without credentials, path, query, or fragment")
+    return value.rstrip("/")
 
 
 def _normalize_remote_path(path: str) -> str:
@@ -926,11 +1108,21 @@ def _current_context_text(context: dict[str, Any]) -> str:
     )
 
 
-def create_server(config: AppConfig) -> ThreadingHTTPServer:
+def make_handler(config: AppConfig, store: DataStore, *, login_ui: LoginUI | None = None) -> type[ChatOLWebHandler]:
+    auth = HubAuth.create(config, login_ui=login_ui)
+
+    class ConfiguredChatOLWebHandler(ChatOLWebHandler):
+        pass
+
+    ConfiguredChatOLWebHandler.config = config
+    ConfiguredChatOLWebHandler.store = store
+    ConfiguredChatOLWebHandler.auth = auth
+    return ConfiguredChatOLWebHandler
+
+
+def create_server(config: AppConfig, *, login_ui: LoginUI | None = None) -> ThreadingHTTPServer:
     store = DataStore(config)
-    ChatOLWebHandler.config = config
-    ChatOLWebHandler.store = store
-    return ThreadingHTTPServer((config.host, config.port), ChatOLWebHandler)
+    return ThreadingHTTPServer((config.host, config.port), make_handler(config, store, login_ui=login_ui))
 
 
 def main(argv: list[str] | None = None) -> int:

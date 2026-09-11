@@ -73,3 +73,7 @@ chatsite
 - [数据存储与模块接入](docs/todo-data-integration.md)：数据库、Node/Board/View、并发／幂等、Python/HTTP 与备份。
 
 使用 `chatsite todo serve` 启动，`chatsite todo check` 验证配置和模型。配置由 ChatEnv 的 `chatsite-todo` provider 管理。模型支持 Responses／Chat Completions；使用 Plan 服务时应保留其 Plan 专属入口，不自动回退到按量计费。
+
+## Overleaf / Hub Web
+
+安装 `"ChatSite[overleaf]>=0.1.5,<0.2.0"` 后可运行 `chatsite-web`。Hub 与 `/overleaf` 是标准库 HTTP 服务，使用 ChatLogin UI-only 登录页、`/login/session` 和登录静态资源；浏览器写操作携带共享 CSRF。原 `chatsite.sqlite3` 继续保存 Settings、Overleaf 凭据/session、OpenAI key、对话和消息；登录 session 改存独立 `auth.sqlite3`，旧本地 session cookie 需要重新登录。

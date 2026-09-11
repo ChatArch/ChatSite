@@ -1,5 +1,9 @@
 from pathlib import Path
+import hashlib
+import json
 import re
+import sqlite3
+import time
 
 import pytest
 
@@ -10,7 +14,8 @@ def test_overleaf_web_is_a_chatsite_feature_entrypoint():
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
     assert 'chatsite-web = "chatsite.web:main"' in pyproject
-    assert 'overleaf = ["ChatOL>=0.1.2,<0.2.0"]' in pyproject
+    assert 'overleaf = ["ChatOL>=0.1.2,<0.2.0", "ChatLogin[ui]>=0.1.3,<0.2.0"]' in pyproject
+    assert 'todo = ["ChatTodo>=0.1.0,<0.2.0", "ChatLogin[web]>=0.1.2,<0.2.0"' in pyproject
     assert '[tool.setuptools.package-data]' in pyproject
     assert '"web_static/*"' in pyproject
 
@@ -40,6 +45,14 @@ def test_public_source_does_not_embed_local_deployment_policy():
     assert not re.search(r"/(?:home|Users)/[A-Za-z0-9_.-]+", combined)
     assert "SITES.md" not in combined
     assert not re.search(r"[A-Za-z0-9._%+-]+@(?!example\.(?:test|invalid|com)\b)[A-Za-z0-9.-]+\.[A-Za-z]{2,}", combined)
+
+
+def test_hub_shared_login_uses_ui_only_extra_and_package_root_assets():
+    source = (ROOT / "src" / "chatsite" / "web.py").read_text(encoding="utf-8")
+
+    assert 'resources.files("chatlogin").joinpath("web", "assets", name)' in source
+    assert 'resources.files("chatlogin.web")' not in source
+    assert "Sign in with the configured ChatSite account." not in source
 
 
 def test_overleaf_web_settings_redact_secrets(monkeypatch, tmp_path):
@@ -100,3 +113,126 @@ def test_overleaf_web_rejects_unsafe_remote_paths():
         _normalize_remote_path("../secret.tex")
     with pytest.raises(WebError):
         _normalize_remote_path("folder//main.tex")
+
+
+def hub_config(monkeypatch, tmp_path, password="admin-pass"):
+    pytest.importorskip("chatol", reason="ChatOL optional extra is not installed")
+    from chatsite.web import AppConfig
+
+    monkeypatch.setenv("CHATSITE_WEB_ADMIN_EMAIL", "admin@example.test")
+    monkeypatch.setenv("CHATSITE_WEB_ADMIN_PASSWORD", password)
+    monkeypatch.setenv("CHATSITE_WEB_PUBLIC_URL", "https://hub.example.test")
+    monkeypatch.setenv("CHATSITE_WEB_ALLOWED_ORIGINS", "http://127.0.0.1:18082")
+    return AppConfig.from_env(data_dir=str(tmp_path))
+
+
+def request(handler, method, path, *, body=None, cookie=None, csrf=None, origin="https://hub.example.test"):
+    payload = json.dumps(body or {}).encode("utf-8") if body is not None else None
+    from io import BytesIO
+    instance = handler.__new__(handler)
+    response = {}
+    chunks = []
+    instance.command = method
+    instance.path = path
+    instance.request_version = "HTTP/1.1"
+    instance.rfile = BytesIO(payload or b"")
+    from email.message import Message
+    headers = Message()
+    if payload is not None:
+        headers["Content-Length"] = str(len(payload))
+        headers["Content-Type"] = "application/json"
+    if cookie:
+        headers["Cookie"] = cookie
+    if csrf:
+        headers["X-CSRF-Token"] = csrf
+    if origin:
+        headers["Origin"] = origin
+    instance.headers = headers
+    instance.send_response = lambda status, message=None: response.update(status=status)
+    instance.send_header = lambda name, value: response.setdefault("headers", []).append((name, value))
+    instance.end_headers = lambda: None
+    instance.wfile = type("Writer", (), {"write": lambda _self, data: chunks.append(data)})()
+    instance._dispatch(method)
+    raw = b"".join(chunks).decode("utf-8", errors="replace")
+    try:
+        data = json.loads(raw) if raw else {}
+    except json.JSONDecodeError:
+        data = raw
+    return response["status"], dict(response.get("headers", [])), data, raw
+
+
+def test_hub_uses_chatlogin_shared_login_bootstrap_and_separate_store(monkeypatch, tmp_path):
+    from chatsite import web
+
+    config = hub_config(monkeypatch, tmp_path)
+    store = web.DataStore(config)
+    handler = web.make_handler(config, store)
+
+    status, _headers, data, raw = request(handler, "GET", "/login/session")
+    assert status == 200 and data == {"authenticated": False}
+
+    status, _headers, _data, raw = request(handler, "GET", "/login?next=/overleaf")
+    assert status == 200
+    assert "data-session-url=\"/login/session\"" in raw
+    assert "data-login-url=\"/api/login\"" in raw
+    assert "使用已配置的 ChatSite 账号登录后继续。" in raw
+
+    status, _headers, _data, raw = request(handler, "GET", "/login/assets/login.js")
+    assert status == 200 and "fetch(" in raw
+
+    status, headers, data, _raw = request(handler, "POST", "/api/login", body={
+        "username": "admin@example.test", "password": "admin-pass", "next": "https://evil.example.test/path",
+    })
+    assert status == 200
+    assert data["email"] == "admin@example.test"
+    assert data["next"] == "/"
+    assert isinstance(data["csrf_token"], str)
+    cookie = headers["Set-Cookie"]
+    assert "chatsite_session=" in cookie and "HttpOnly" in cookie and "Secure" in cookie and "SameSite=Lax" in cookie
+
+    token = re.search(r"chatsite_session=([^;]+)", cookie).group(1)
+    auth_db = tmp_path / "auth.sqlite3"
+    assert auth_db.exists()
+    with sqlite3.connect(auth_db) as db:
+        row = db.execute("select principal, csrf from chatlogin_sessions").fetchone()
+    assert "admin-pass" not in row[0]
+    assert row[1] == data["csrf_token"]
+    with sqlite3.connect(tmp_path / "chatsite.sqlite3") as db:
+        assert db.execute("select count(*) from settings").fetchone()[0] > 0
+
+    status, _headers, session, _raw = request(handler, "GET", "/api/me", cookie=f"chatsite_session={token}")
+    assert status == 200
+    assert session == {"authenticated": True, "email": "admin@example.test", "csrf_token": data["csrf_token"]}
+
+
+def test_hub_rejects_legacy_rows_bad_csrf_cross_origin_and_rotated_credentials(monkeypatch, tmp_path):
+    from chatsite import web
+
+    config = hub_config(monkeypatch, tmp_path)
+    store = web.DataStore(config)
+    legacy = "legacy-token-value"
+    legacy_digest = hashlib.sha256(legacy.encode("utf-8")).hexdigest()
+    now = time.time()
+    with sqlite3.connect(tmp_path / "chatsite.sqlite3") as db:
+        db.execute("insert into sessions(token_hash, user_email, created_at, expires_at) values(?,?,?,?)",
+                   (legacy_digest, "admin@example.test", now, now + 3600))
+        assert db.execute("select user_email from sessions where token_hash=? and expires_at>?",
+                          (legacy_digest, now)).fetchone() == ("admin@example.test",)
+    handler = web.make_handler(config, store)
+    assert request(handler, "GET", "/api/session", cookie=f"chatsite_session={legacy}")[0] == 401
+
+    status, headers, data, _raw = request(handler, "POST", "/api/login", body={"email": "admin@example.test", "password": "admin-pass"})
+    assert status == 200
+    token = re.search(r"chatsite_session=([^;]+)", headers["Set-Cookie"]).group(1)
+    cookie = f"chatsite_session={token}"
+    assert request(handler, "PUT", "/api/settings", cookie=cookie, csrf="wrong", body={"openai_model": "test"})[0] == 403
+    assert request(handler, "PUT", "/api/settings", cookie=cookie, csrf=data["csrf_token"],
+                   origin="https://evil.example.test", body={"openai_model": "test"})[0] == 403
+    assert request(handler, "PUT", "/api/settings", cookie=cookie, csrf=data["csrf_token"], body={"openai_model": "test"})[0] == 200
+
+    rotated_config = hub_config(monkeypatch, tmp_path, password="rotated-pass")
+    rotated_handler = web.make_handler(rotated_config, web.DataStore(rotated_config))
+    assert request(rotated_handler, "GET", "/api/session", cookie=cookie)[0] == 401
+
+    assert request(handler, "POST", "/api/logout", cookie=cookie, csrf=data["csrf_token"])[0] == 200
+    assert request(handler, "GET", "/api/session", cookie=cookie)[0] == 401

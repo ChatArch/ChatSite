@@ -7,6 +7,8 @@
 - Todo 登录页与会话接入 ChatLogin 共享核心，保留 `/api/login` 的 `email/password` JSON 响应兼容，并支持共享登录页的 `username` 字段。
 - Todo 会话改存独立 `auth.sqlite3`，只保存 token digest、Principal、到期时间和 CSRF secret；旧版本地会话需要重新登录一次，任务、对话、提案和视图数据不迁移也不删除。
 - 保留同源、CSRF、Secure/HttpOnly/SameSite cookie 与 8 次/300 秒登录限流，并增加持久会话、凭据轮换、共享登录资源和真实 TCP auth 回归覆盖。
+- Hub/Overleaf 标准库 HTTP 服务接入 ChatLogin 共享 `/login`、`/login/session`、登录资源和 CSRF，会话存入独立 `auth.sqlite3`；原 `chatsite.sqlite3` 的 Settings、Overleaf/OpenAI secret、对话和消息继续作为业务数据权威。
+- Hub/Overleaf extra 使用 `ChatLogin[ui]>=0.1.3`，共享登录资源通过 package-root 读取，避免标准库 HTTP Hub 额外拉入 FastAPI/Starlette。
 
 ## 2026-09-09 - 0.1.4
 

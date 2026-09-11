@@ -6,7 +6,10 @@ web application.
 
 ## What It Provides
 
-- A browser login page for the ChatSite hub.
+- A shared ChatLogin `/login` page, `/login/session` bootstrap endpoint, and
+  `/login/assets/*` resources for the standard-library ChatSite hub. The Hub
+  uses the ChatLogin UI-only dependency and keeps the default login copy
+  Chinese-first.
 - An `/overleaf` feature workspace for Overleaf editing.
 - Server-side Settings for the Overleaf endpoint, Overleaf credentials/session,
   OpenAI model, and OpenAI API key.
@@ -24,7 +27,8 @@ web application.
 ChatSite owns:
 
 - HTTP serving and static assets
-- configurable login/session management
+- login credential authority from the configured single ChatSite admin account
+- ChatLogin-backed browser sessions in a separate `auth.sqlite3`
 - user-facing Settings
 - conversation state
 - service deployment and nginx/public entry
@@ -49,6 +53,12 @@ Recommended for deployment:
 - `CHATSITE_WEB_HOST`, default `127.0.0.1`
 - `CHATSITE_WEB_PORT`, default `18082`
 - `CHATSITE_WEB_DATA_DIR`, default `~/.chatarch/chatsite`
+- `CHATSITE_WEB_PUBLIC_URL`, default built from host/port; must be an HTTP(S)
+  origin and is trusted for browser write origins and Secure cookie selection
+- `CHATSITE_WEB_ALLOWED_ORIGINS`, optional comma-separated extra HTTP(S)
+  origins for browser writes
+- `CHATSITE_WEB_SECURE_COOKIE`, optional `true`/`false`; defaults from
+  `CHATSITE_WEB_PUBLIC_URL`
 - `CHATSITE_OVERLEAF_DEFAULT_URL`, default `http://127.0.0.1:8090`
 - `CHATSITE_OVERLEAF_ENV_FILE`, points at an existing private Overleaf `.env`
 - `OPENAI_API_KEY` or `CHATSITE_OPENAI_API_KEY`
@@ -56,6 +66,13 @@ Recommended for deployment:
 - `OPENAI_MODEL` or `CHATSITE_WEB_OPENAI_MODEL`, default `gpt-5.5`
 
 Do not commit passwords, session cookies, API keys, or deployment `.env` files.
+
+`chatsite.sqlite3` remains authoritative for Settings, Overleaf transport
+secrets, conversations, messages, and compile artifacts. Browser login sessions
+are stored separately in `auth.sqlite3` through ChatLogin as token digests with
+TTL, CSRF secrets, bounded capacity, logout revocation, and credential-rotation
+revocation. Older local `sessions` rows are not accepted as a fallback; users may
+need to sign in again after upgrading.
 
 ## Local Run
 

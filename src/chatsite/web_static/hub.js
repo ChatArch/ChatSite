@@ -1,4 +1,5 @@
 const $ = (id) => document.getElementById(id);
+let csrfToken = null;
 
 const messages = {
   zh: {
@@ -71,9 +72,13 @@ function toggleLang() {
 
 async function api(path, options = {}) {
   const opts = { credentials: 'same-origin', ...options };
+  const method = (opts.method || 'GET').toUpperCase();
   if (opts.body && typeof opts.body !== 'string') {
     opts.headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
     opts.body = JSON.stringify(opts.body);
+  }
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && csrfToken) {
+    opts.headers = { ...(opts.headers || {}), 'X-CSRF-Token': csrfToken };
   }
   const response = await fetch(path, opts);
   const text = await response.text();
@@ -95,9 +100,14 @@ function showApp(email) {
 }
 
 async function loadMe() {
-  const me = await api('/api/me');
-  if (me.authenticated) showApp(me.email);
-  else showLogin();
+  const me = await api('/login/session');
+  if (me.authenticated) {
+    csrfToken = me.csrf_token || null;
+    showApp(me.email);
+  } else {
+    csrfToken = null;
+    showLogin();
+  }
 }
 
 $('loginForm').addEventListener('submit', async (event) => {
@@ -108,6 +118,7 @@ $('loginForm').addEventListener('submit', async (event) => {
       method: 'POST',
       body: { email: $('loginEmail').value, password: $('loginPassword').value },
     });
+    csrfToken = data.csrf_token || null;
     showApp(data.email);
   } catch (error) {
     $('loginError').textContent = messages[lang].badLogin || error.message;
@@ -116,6 +127,7 @@ $('loginForm').addEventListener('submit', async (event) => {
 
 $('logoutButton').addEventListener('click', async () => {
   await api('/api/logout', { method: 'POST', body: {} });
+  csrfToken = null;
   showLogin();
 });
 
