@@ -16,8 +16,11 @@ def test_runtime_dependency_and_provider_contracts():
     assert '"chatstyle>=0.2.0,<0.3.0"' in pyproject
     assert '"chatenv>=0.2.10,<0.3.0"' in pyproject
     assert '"ChatLogin[web]>=0.1.2,<0.2.0"' in pyproject
+    assert '"ChatImg>=0.1.8,<0.2.0"' in pyproject
+    assert '"ChatShare>=0.2.5,<0.3.0"' in pyproject
     assert '[project.entry-points."chatenv.configs"]' in pyproject
     assert 'chatsite = "chatsite.config"' in pyproject
+    assert 'chatsite_image = "chatsite.image_config"' in pyproject
 
 
 def test_checked_in_cli_trees_match_registered_runtime_output():

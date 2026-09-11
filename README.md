@@ -45,12 +45,15 @@ chatsite
 ├── --version  # Show the version and exit.
 ├── --tree  # Print the registered CLI tree and exit.
 ├── --tree-brief  # Print the registered CLI tree without parameter signatures and exit.
+├── image  # ChatImg 文生图服务。
+│   ├── check [--profile PROFILE] [--home HOME]  # 验证 Image 配置，不发起图片生成。
+│   └── serve [--host HOST] [--port PORT] [--profile PROFILE] [--home HOME]  # 启动 ChatImg Web 服务。
 └── todo  # 任务树工作台。
     ├── check [--profile PROFILE] [--home HOME]  # 验证配置及模型，会发送一次不修改任务的小请求。
     └── serve [--host HOST] [--port PORT] [--profile PROFILE] [--home HOME]  # 启动任务树 Web 服务。
 ```
 
-当前公开接口包含 Todo 服务命令；`--tree` 保留参数签名，`--tree-brief` 省略签名。
+当前公开接口包含 Todo 与 Image 服务命令；`--tree` 保留参数签名，`--tree-brief` 省略签名。
 
 `chatsite hello` 不是公开 CLI；它属于脚手架示例残留，必须失败。
 
@@ -73,3 +76,9 @@ chatsite
 - [数据存储与模块接入](docs/todo-data-integration.md)：数据库、Node/Board/View、并发／幂等、Python/HTTP 与备份。
 
 使用 `chatsite todo serve` 启动，`chatsite todo check` 验证配置和模型。配置由 ChatEnv 的 `chatsite-todo` provider 管理。模型支持 Responses／Chat Completions；使用 Plan 服务时应保留其 Plan 专属入口，不自动回退到按量计费。
+
+## ChatImg 文生图服务
+
+安装 `"ChatSite[image-web]>=0.1.5,<0.2.0"` 后执行 `chatsite image serve`。根页面公开可用，访客可以继续按原 `/api/generate`、`/generated/<filename>`、`/api/images/<filename>` 路径生成、预览、下载和分享；登录是可选能力，登录后成功生成会写入当前账号自己的 SQLite 历史。历史接口只返回当前 Principal 的记录，访客不能枚举全局历史，也不会把旧匿名图片自动归到任意用户。
+
+配置由 ChatEnv 的 `chatsite-image` provider 管理，运行数据默认在 `~/.chatarch/chatsite/image/`。模型凭据仍由 ChatImg/OpenAI profile 读取，ChatSite 不复制 API key。可配置 `CHATSITE_IMAGE_LEGACY_GENERATED_DIR` 作为旧匿名图片的只读 URL 兼容入口；迁移计划是先挂载只读旧目录、核对访问日志和文件生命周期，再由运维另行授权复制或归档，默认服务不会移动、删除或改属旧文件。
