@@ -10,6 +10,9 @@ chatsite
 ├── --version  # Show the version and exit.
 ├── --tree  # Print the registered CLI tree and exit.
 ├── --tree-brief  # Print the registered CLI tree without parameter signatures and exit.
+├── image  # ChatImg 文生图服务。
+│   ├── check [--profile PROFILE] [--home HOME]  # 验证 Image 配置，不发起图片生成。
+│   └── serve [--host HOST] [--port PORT] [--profile PROFILE] [--home HOME]  # 启动 ChatImg Web 服务。
 └── todo  # 任务树工作台。
     ├── check [--profile PROFILE] [--home HOME]  # 验证配置及模型，会发送一次不修改任务的小请求。
     └── serve [--host HOST] [--port PORT] [--profile PROFILE] [--home HOME]  # 启动任务树 Web 服务。

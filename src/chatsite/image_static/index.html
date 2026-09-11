@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChatImg 文生图</title>
+  <link rel="stylesheet" href="assets/image.css">
+</head>
+<body>
+  <main class="shell" data-login-url="/api/login" data-session-url="/login/session" data-logout-url="/api/logout">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">ChatSite Image</p>
+        <h1>ChatImg 文生图</h1>
+      </div>
+      <nav class="account">
+        <a id="loginLink" class="ghost" href="login?next=./">登录</a>
+        <button id="logout" class="ghost" hidden>退出</button>
+        <button id="historyToggle" class="ghost" hidden>我的历史</button>
+      </nav>
+    </header>
+    <section class="workspace">
+      <form id="generateForm" class="panel">
+        <label>提示词
+          <textarea id="prompt" maxlength="1800" required placeholder="描述你想生成的画面"></textarea>
+        </label>
+        <div class="row">
+          <label>模型
+            <select id="model">
+              <option value="gpt-image-2-low">gpt-image-2-low</option>
+              <option value="gpt-image-2-medium">gpt-image-2-medium</option>
+              <option value="gpt-image-2-high">gpt-image-2-high</option>
+            </select>
+          </label>
+          <label>尺寸
+            <select id="size">
+              <option value="1024x1024">1024x1024</option>
+              <option value="1536x1024">1536x1024</option>
+              <option value="1024x1536">1024x1536</option>
+            </select>
+          </label>
+        </div>
+        <button class="primary" type="submit">生成图片</button>
+        <p id="status" class="status" role="status"></p>
+      </form>
+      <section class="preview">
+        <img id="preview" alt="" hidden>
+        <div id="empty" class="empty">生成结果会显示在这里</div>
+        <div class="actions">
+          <a id="download" class="ghost" href="#" download hidden>下载</a>
+          <button id="share" class="ghost" hidden>分享</button>
+        </div>
+      </section>
+      <aside id="history" class="history" hidden>
+        <h2>我的历史</h2>
+        <div id="historyList"></div>
+      </aside>
+    </section>
+  </main>
+  <script src="assets/image.js"></script>
+</body>
+</html>

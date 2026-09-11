@@ -24,4 +24,7 @@ class ChatsiteConfig(BaseEnvConfig):
     )
 
 
-__all__ = ["ChatsiteConfig"]
+from chatsite.image_config import ImageWebConfig
+
+
+__all__ = ["ChatsiteConfig", "ImageWebConfig"]

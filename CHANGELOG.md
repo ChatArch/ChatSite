@@ -2,6 +2,11 @@
 
 ## 2026-09-11 - 0.1.5
 
+### 新增
+
+- 新增 `chatsite image serve/check` 与 `chatsite-image` 服务入口：访客继续使用 ChatImg 文生图，登录用户获得自己的持久生成历史。
+- Image 服务复用 ChatLogin 会话、共享登录页、CSRF 和同源保护；历史按 Principal 隔离，旧匿名文件只读兼容且不会自动归属到用户。
+
 ### 改进
 
 - Todo 登录页与会话接入 ChatLogin 共享核心，保留 `/api/login` 的 `email/password` JSON 响应兼容，并支持共享登录页的 `username` 字段。
