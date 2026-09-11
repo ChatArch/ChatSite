@@ -38,7 +38,7 @@ Common keys:
 ## Data and security
 
 - New images are written under `generated/` in the Image data directory.
-- History metadata is stored in `image-history.sqlite3` and isolated by normalized account owner.
+- History metadata is stored in `history.sqlite3` and isolated by normalized account owner.
 - `CHATSITE_IMAGE_LEGACY_GENERATED_DIR` provides read-only compatibility for old files; it does not assign anonymous records to a user.
 - Generation uses bounded client throttling and does not trust browser-supplied forwarding headers.
 - Login, logout, history, and generation writes use ChatLogin sessions and CSRF checks; JSON responses use `no-store` and `nosniff`.

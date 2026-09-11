@@ -38,7 +38,7 @@ chatsite image serve --profile web --host 127.0.0.1 --port 8766
 ## 数据与安全
 
 - 新图片写入 Image 数据目录的 `generated/`。
-- 历史元数据保存在 `image-history.sqlite3`，按标准化账号 owner 隔离。
+- 历史元数据保存在 `history.sqlite3`，按标准化账号 owner 隔离。
 - `CHATSITE_IMAGE_LEGACY_GENERATED_DIR` 只用于兼容读取旧文件，不会把旧匿名记录归给用户。
 - 生成接口有有界的客户端限流；不信任浏览器可伪造的转发头。
 - 登录、退出、历史和生成写请求使用 ChatLogin 会话与 CSRF 校验；JSON 响应使用 `no-store` 和 `nosniff`。
