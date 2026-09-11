@@ -8,6 +8,7 @@ from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
 import io
+import json
 from importlib import resources
 import logging
 import os
@@ -37,6 +38,7 @@ from chatsite.todo_state import StateError, WebState
 MAX_PROMPT_CHARS = 1800
 RATE_WINDOW_SECONDS = 300
 RATE_LIMIT = 12
+GENERATION_RATE_MAX_CLIENTS = 1024
 MAX_SHARE_BYTES = 20 * 1024 * 1024
 SHARE_RATE_WINDOW_SECONDS = 300
 SHARE_RATE_LIMIT = 10
@@ -63,8 +65,7 @@ def _error(code: str, message: str) -> dict:
 
 
 def _client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
-    return forwarded or (request.client.host if request.client else "unknown")
+    return request.client.host if request.client else "unknown"
 
 
 def _same_origin(request: Request, config: ImageSettings) -> None:
@@ -222,12 +223,14 @@ def create_app(
     web_state = WebState(config.data_dir / "web.sqlite3", config.session_ttl)
     auth = ImageAuth.create(config, login_ui=login_ui, credential_backend=credential_backend)
     make_generator = generator_factory or _make_generator_factory(config)
-    requests_by_ip: dict[str, deque[float]] = {}
+    requests_by_ip: OrderedDict[str, deque[float]] = OrderedDict()
     shares_by_ip: OrderedDict[str, deque[float]] = OrderedDict()
+    generation_rate_lock = threading.Lock()
     share_rate_lock = threading.Lock()
     share_inflight = threading.BoundedSemaphore(2)
     publication_lock = threading.Lock()
     app.state.config, app.state.history, app.state.image_auth = config, history, auth
+    app.state.generation_rate_buckets = requests_by_ip
 
     @app.middleware("http")
     async def security(request: Request, next_handler):
@@ -270,12 +273,23 @@ def create_app(
 
     def check_rate_limit(ip: str) -> None:
         now = time.time()
-        bucket = requests_by_ip.setdefault(ip, deque())
-        while bucket and now - bucket[0] > RATE_WINDOW_SECONDS:
-            bucket.popleft()
-        if len(bucket) >= RATE_LIMIT:
-            raise StateError("rate_limited", "生图请求过多，请稍后再试", 429)
-        bucket.append(now)
+        with generation_rate_lock:
+            for known_ip, known_bucket in list(requests_by_ip.items()):
+                while known_bucket and now - known_bucket[0] > RATE_WINDOW_SECONDS:
+                    known_bucket.popleft()
+                if not known_bucket:
+                    del requests_by_ip[known_ip]
+            bucket = requests_by_ip.get(ip)
+            if bucket is None:
+                if len(requests_by_ip) >= GENERATION_RATE_MAX_CLIENTS:
+                    raise StateError("rate_limited", "当前生图请求客户端过多，请稍后再试", 429)
+                bucket = deque()
+                requests_by_ip[ip] = bucket
+            else:
+                requests_by_ip.move_to_end(ip)
+            if len(bucket) >= RATE_LIMIT:
+                raise StateError("rate_limited", "生图请求过多，请稍后再试", 429)
+            bucket.append(now)
 
     def check_share_rate_limit(ip: str) -> None:
         now = time.time()
@@ -299,6 +313,20 @@ def create_app(
 
     async def require_user(request: Request) -> str:
         return auth.require_read(request.cookies.get(COOKIE))
+
+    async def read_login_payload(request: Request) -> dict[str, Any]:
+        body = await request.body()
+        if len(body) > MAX_BODY:
+            raise StateError("body_too_large", "请求内容过大", 413)
+        if not body:
+            return {}
+        try:
+            payload = json.loads(body.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise StateError("bad_json", "登录请求必须是 JSON 对象", 400) from None
+        if not isinstance(payload, dict):
+            raise StateError("bad_json", "登录请求必须是 JSON 对象", 400)
+        return payload
 
     @app.get("/health")
     def health():
@@ -334,7 +362,7 @@ def create_app(
         client_id = request.client.host if request.client else "unknown"
         if not web_state.login_allowed(client_id):
             raise StateError("rate_limited", "登录尝试过多，请五分钟后再试", 429)
-        payload = await request.json()
+        payload = await read_login_payload(request)
         root = request.scope.get("root_path", "").rstrip("/")
         try:
             body, token = auth.login(payload, request.cookies.get(COOKIE), request.headers.get("x-csrf-token"),
@@ -347,6 +375,14 @@ def create_app(
         response = JSONResponse(body)
         response.set_cookie(COOKIE, token, httponly=True, secure=config.secure_cookie,
                             samesite="lax", max_age=config.session_ttl, path="/")
+        return response
+
+    @app.post("/api/guest/reset")
+    async def guest_reset(request: Request):
+        auth.reset_invalid_guest(request.cookies.get(COOKIE))
+        root = request.scope.get("root_path", "").rstrip("/")
+        response = JSONResponse({"ok": True, "authenticated": False, "next": f"{root}/"})
+        response.delete_cookie(COOKIE, path="/", secure=config.secure_cookie, httponly=True, samesite="lax")
         return response
 
     @app.get("/api/session")

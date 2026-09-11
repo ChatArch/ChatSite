@@ -1,6 +1,7 @@
 import hashlib
 import importlib
 import sqlite3
+import time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
@@ -50,6 +51,12 @@ def app_client(tmp_path, generator=None, credential_backend=None, **overrides):
     client = TestClient(app, base_url=cfg.public_url)
     client.headers["Origin"] = cfg.public_url
     return app, client
+
+
+def peer_client(app, cfg, host):
+    client = TestClient(app, base_url=cfg.public_url, client=(host, 50000))
+    client.headers["Origin"] = cfg.public_url
+    return client
 
 
 def login(client, email="owner@example.test", password="owner-password"):
@@ -129,6 +136,116 @@ def test_expired_identity_does_not_drop_generate_to_guest(tmp_path):
     assert app.state.history.list("owner@example.test")["items"] == []
 
 
+def test_invalid_cookie_guest_reset_is_explicit_and_anonymous(tmp_path):
+    app, client = app_client(tmp_path, FakeGenerator())
+    login(client)
+    with sqlite3.connect(app.state.config.data_dir / "auth.sqlite3") as db:
+        db.execute("update chatlogin_sessions set expires_at=0")
+
+    rejected = client.post("/api/generate", json={"prompt": "不要自动降级", "model": "gpt-image-2-low", "size": "1024x1024"})
+    assert rejected.status_code == 401
+    assert rejected.json()["error"]["code"] == "session_expired"
+
+    reset = client.post("/api/guest/reset")
+    assert reset.status_code == 200
+    assert "chatimage_session=" in reset.headers["set-cookie"]
+    assert "Max-Age=0" in reset.headers["set-cookie"]
+    result = generate(client, prompt="访客重新开始")
+    assert result["ok"] is True
+    assert app.state.history.list("owner@example.test")["items"] == []
+
+
+def test_guest_reset_rejects_cross_origin_and_preserves_active_session(tmp_path):
+    _app, client = app_client(tmp_path, FakeGenerator())
+    login_response = login(client)
+    csrf = login_response.json()["csrf_token"]
+
+    active = client.post("/api/guest/reset")
+    assert active.status_code == 409
+    assert "set-cookie" not in active.headers
+    assert client.get("/api/session").json()["csrf_token"] == csrf
+
+    cross_site = client.post("/api/guest/reset", headers={"Origin": "https://evil.example.test"})
+    assert cross_site.status_code == 403
+    assert client.get("/api/session").json()["csrf_token"] == csrf
+
+
+def test_guest_reset_and_login_page_honor_root_path(tmp_path):
+    module = importlib.import_module("chatsite.image_web")
+    cfg = settings(tmp_path)
+    app = module.create_app(cfg, generator_factory=lambda _model: FakeGenerator())
+    client = TestClient(app, base_url=cfg.public_url, root_path="/mounted")
+    client.headers["Origin"] = cfg.public_url
+    page = client.get("/login?next=/mounted/")
+    assert page.status_code == 200
+    assert 'href="/mounted/?guest=1"' in page.text
+    reset = client.post("/api/guest/reset")
+    assert reset.status_code == 200
+    assert reset.json()["next"] == "/mounted/"
+
+
+def test_generation_rate_limit_uses_normalized_peer_not_forwarded_header(tmp_path):
+    fake = FakeGenerator()
+    _app, client = app_client(tmp_path, fake)
+    for index in range(12):
+        response = client.post(
+            "/api/generate",
+            json={"prompt": f"同一真实客户端 {index}", "model": "gpt-image-2-low", "size": "1024x1024"},
+            headers={"X-Forwarded-For": f"203.0.113.{index}"},
+        )
+        assert response.status_code == 200, response.text
+    limited = client.post(
+        "/api/generate",
+        json={"prompt": "仍是同一真实客户端", "model": "gpt-image-2-low", "size": "1024x1024"},
+        headers={"X-Forwarded-For": "203.0.113.99"},
+    )
+    assert limited.status_code == 429
+    assert len(fake.calls) == 12
+
+
+def test_generation_rate_distinct_normalized_clients_are_distinct(tmp_path):
+    module = importlib.import_module("chatsite.image_web")
+    cfg = settings(tmp_path)
+    fake = FakeGenerator()
+    app = module.create_app(cfg, generator_factory=lambda _model: fake)
+    first = peer_client(app, cfg, "198.51.100.10")
+    second = peer_client(app, cfg, "198.51.100.11")
+
+    for index in range(12):
+        assert first.post("/api/generate", json={"prompt": f"first {index}", "model": "gpt-image-2-low", "size": "1024x1024"}).status_code == 200
+    assert first.post("/api/generate", json={"prompt": "first limited", "model": "gpt-image-2-low", "size": "1024x1024"}).status_code == 429
+    assert second.post("/api/generate", json={"prompt": "second ok", "model": "gpt-image-2-low", "size": "1024x1024"}).status_code == 200
+
+
+def test_generation_rate_buckets_expire_and_capacity_is_bounded(monkeypatch, tmp_path):
+    module = importlib.import_module("chatsite.image_web")
+    monkeypatch.setattr(module, "GENERATION_RATE_MAX_CLIENTS", 3)
+    now = time.time()
+    monkeypatch.setattr(module.time, "time", lambda: now)
+    cfg = settings(tmp_path)
+    app = module.create_app(cfg, generator_factory=lambda _model: FakeGenerator())
+
+    for index in range(3):
+        assert peer_client(app, cfg, f"198.51.100.{index}").post(
+            "/api/generate",
+            json={"prompt": f"client {index}", "model": "gpt-image-2-low", "size": "1024x1024"},
+        ).status_code == 200
+    assert len(app.state.generation_rate_buckets) == 3
+    blocked = peer_client(app, cfg, "198.51.100.99").post(
+        "/api/generate",
+        json={"prompt": "capacity", "model": "gpt-image-2-low", "size": "1024x1024"},
+    )
+    assert blocked.status_code == 429
+    assert len(app.state.generation_rate_buckets) == 3
+
+    now += module.RATE_WINDOW_SECONDS + 1
+    assert peer_client(app, cfg, "198.51.100.99").post(
+        "/api/generate",
+        json={"prompt": "after expiry", "model": "gpt-image-2-low", "size": "1024x1024"},
+    ).status_code == 200
+    assert list(app.state.generation_rate_buckets) == ["198.51.100.99"]
+
+
 def test_csrf_origin_and_invalid_auth_header_boundaries(tmp_path):
     fake = FakeGenerator()
     _app, client = app_client(tmp_path, fake)
@@ -140,6 +257,18 @@ def test_csrf_origin_and_invalid_auth_header_boundaries(tmp_path):
                            headers={"Authorization": "Bearer invalid"})
     assert response.status_code == 401
     assert not fake.calls
+
+
+def test_login_malformed_non_object_and_large_json_are_controlled_errors(tmp_path):
+    _app, client = app_client(tmp_path, FakeGenerator())
+    cases = [b"{", b"null", b"[]", b"true"]
+    for body in cases:
+        response = client.post("/api/login", content=body, headers={"Content-Type": "application/json"})
+        assert response.status_code == 400
+        assert "Traceback" not in response.text
+        assert "internal_error" not in response.text
+    large = client.post("/api/login", content=b"x" * 2_000_001, headers={"Content-Type": "application/json"})
+    assert large.status_code == 413
 
 
 def test_provider_errors_are_redacted_and_no_retry_or_record(tmp_path):

@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 from dataclasses import dataclass
+from dataclasses import replace
 from importlib import resources
 from typing import Callable
 
@@ -74,7 +75,7 @@ class ImageAuth:
             title="ChatImg",
             subtitle="登录后可保存自己的生成历史；访客仍可直接生成。",
             palette="forest",
-            guest_url="/",
+            guest_url="/?guest=1",
             guest_label="继续生图",
         )
         return cls(config=config, sessions=sessions, backend=CallbackBackend(verify), login_ui=ui,
@@ -161,8 +162,18 @@ class ImageAuth:
         self.require_write(token, csrf)
         self.sessions.revoke(token)
 
+    def reset_invalid_guest(self, token: str | None) -> None:
+        if token is None:
+            return
+        session = self._valid_session(token)
+        if session is not None:
+            raise StateError("active_session", "当前仍是有效登录会话，请使用退出登录。", 409)
+        self.sessions.revoke(token)
+
     def login_page(self, request: Request, next_url: str | None = None) -> HTMLResponse:
         root = request.scope.get("root_path", "").rstrip("/")
+        guest_url = f"{root}/?guest=1" if root else "/?guest=1"
+        login_ui = replace(self.login_ui, guest_url=guest_url) if self.login_ui.guest_url is not None else self.login_ui
         context = {
             "login_url": f"{root}/api/login",
             "session_url": f"{root}/login/session",
@@ -170,7 +181,7 @@ class ImageAuth:
             "assets_path": f"{root}/login/assets",
             "next": safe_next(next_url, default=f"{root}/"),
         }
-        return HTMLResponse(self.login_ui.render(context))
+        return HTMLResponse(login_ui.render(context))
 
 
 def login_asset(name: str) -> Response:

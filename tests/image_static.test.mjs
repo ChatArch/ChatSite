@@ -71,7 +71,7 @@ async function loadApp(fetchImpl) {
   const ids = [
     ".shell", "#generateForm", "#prompt", "#model", "#size", "#status", "#preview",
     "#empty", "#download", "#share", "#logout", "#historyToggle", "#history", "#historyList",
-    "#loginLink",
+    "#loginLink", "#guestReset",
   ];
   for (const id of ids) elements.set(id, new Element(id));
   elements.get("#prompt").value = "测试提示词";
@@ -80,9 +80,13 @@ async function loadApp(fetchImpl) {
   elements.get("#logout").hidden = true;
   elements.get("#historyToggle").hidden = true;
   elements.get("#history").hidden = true;
+  elements.get("#guestReset").hidden = true;
 
   const context = {
-    document: { querySelector: (selector) => elements.get(selector) },
+    document: {
+      querySelector: (selector) => elements.get(selector),
+      createElement: (tagName) => new Element(tagName),
+    },
     fetch: fetchImpl,
     Date,
   };
@@ -173,6 +177,37 @@ test("successful logout clears csrf controls and private history DOM", async () 
   await elements.get("#logout").dispatch("click");
   assert.equal(elements.get("#logout").hidden, true);
   assert.equal(elements.get("#historyToggle").hidden, true);
+  assert.equal(elements.get("#history").hidden, true);
+  assert.equal(elements.get("#historyList").children.length, 0);
+});
+
+test("history response that arrives after logout cannot repopulate private DOM", async () => {
+  const history = deferred();
+  const elements = await loadApp((url) => {
+    if (url === "login/session") {
+      return Promise.resolve(response(true, { authenticated: true, csrf_token: "csrf" }));
+    }
+    if (url === "api/history") {
+      return history.promise;
+    }
+    if (url === "api/logout") {
+      return Promise.resolve(response(true, { ok: true }));
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  });
+
+  elements.get("#history").hidden = true;
+  const loading = elements.get("#historyToggle").dispatch("click");
+  await elements.get("#logout").dispatch("click");
+  history.resolve(response(true, {
+    items: [{
+      prompt: "不应恢复的私有历史",
+      image_url: "/generated/20260912T000000Z-1234567890.png",
+      created_at: 1789142400,
+    }],
+  }));
+  await loading;
+
   assert.equal(elements.get("#history").hidden, true);
   assert.equal(elements.get("#historyList").children.length, 0);
 });

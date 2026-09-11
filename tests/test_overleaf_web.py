@@ -168,8 +168,9 @@ def test_hub_uses_chatlogin_shared_login_bootstrap_and_separate_store(monkeypatc
     store = web.DataStore(config)
     handler = web.make_handler(config, store)
 
-    status, _headers, data, raw = request(handler, "GET", "/login/session")
+    status, headers, data, raw = request(handler, "GET", "/login/session")
     assert status == 200 and data == {"authenticated": False}
+    assert headers["Cache-Control"] == "no-store"
 
     status, _headers, _data, raw = request(handler, "GET", "/login?next=/overleaf")
     assert status == 200
@@ -200,8 +201,9 @@ def test_hub_uses_chatlogin_shared_login_bootstrap_and_separate_store(monkeypatc
     with sqlite3.connect(tmp_path / "chatsite.sqlite3") as db:
         assert db.execute("select count(*) from settings").fetchone()[0] > 0
 
-    status, _headers, session, _raw = request(handler, "GET", "/api/me", cookie=f"chatsite_session={token}")
+    status, headers, session, _raw = request(handler, "GET", "/api/me", cookie=f"chatsite_session={token}")
     assert status == 200
+    assert headers["Cache-Control"] == "no-store"
     assert session == {"authenticated": True, "email": "admin@example.test", "csrf_token": data["csrf_token"]}
 
 

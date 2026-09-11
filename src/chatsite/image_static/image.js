@@ -10,6 +10,7 @@ const download = document.querySelector("#download");
 const share = document.querySelector("#share");
 const loginLink = document.querySelector("#loginLink");
 const logout = document.querySelector("#logout");
+const guestReset = document.querySelector("#guestReset");
 const historyToggle = document.querySelector("#historyToggle");
 const historyBox = document.querySelector("#history");
 const historyList = document.querySelector("#historyList");
@@ -18,6 +19,7 @@ let csrfToken = null;
 let currentFilename = null;
 let generating = false;
 let sharing = false;
+let authEpoch = 0;
 
 async function refreshSession() {
   const response = await fetch("login/session", { credentials: "same-origin" });
@@ -26,6 +28,7 @@ async function refreshSession() {
     csrfToken = data.csrf_token;
     loginLink.hidden = true;
     logout.hidden = false;
+    guestReset.hidden = true;
     historyToggle.hidden = false;
   }
 }
@@ -53,11 +56,35 @@ function clearPrivateHistory() {
   if (historyList.replaceChildren) historyList.replaceChildren();
 }
 
+async function resetToGuest() {
+  const response = await fetch("api/guest/reset", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+  });
+  const data = await readJson(response);
+  if (!response.ok) {
+    statusEl.textContent = messageFrom(data, "当前登录仍有效，请使用退出登录");
+    return false;
+  }
+  authEpoch += 1;
+  csrfToken = null;
+  loginLink.hidden = false;
+  logout.hidden = true;
+  historyToggle.hidden = true;
+  historyBox.hidden = true;
+  guestReset.hidden = true;
+  clearPrivateHistory();
+  statusEl.textContent = "已切换为访客";
+  return true;
+}
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (generating) return;
   generating = true;
   generateButton.disabled = true;
+  guestReset.hidden = true;
   statusEl.textContent = "正在生成...";
   try {
     const payload = { prompt: promptEl.value, model: modelEl.value, size: sizeEl.value };
@@ -70,6 +97,7 @@ form.addEventListener("submit", async (event) => {
     const data = await readJson(response);
     if (!response.ok) {
       statusEl.textContent = messageFrom(data, "生成失败，请稍后手动重试");
+      if (data.error?.code === "session_expired") guestReset.hidden = false;
       return;
     }
     currentFilename = data.filename;
@@ -91,8 +119,10 @@ form.addEventListener("submit", async (event) => {
 historyToggle.addEventListener("click", async () => {
   historyBox.hidden = !historyBox.hidden;
   if (historyBox.hidden) return;
+  const epoch = authEpoch;
   const response = await fetch("api/history", { credentials: "same-origin" });
   const data = await response.json();
+  if (epoch !== authEpoch || !csrfToken) return;
   historyList.textContent = "";
   for (const item of data.items || []) {
     const node = document.createElement("article");
@@ -114,11 +144,13 @@ logout.addEventListener("click", async () => {
       historyToggle.hidden = false;
       return;
     }
+    authEpoch += 1;
     csrfToken = null;
     loginLink.hidden = false;
     logout.hidden = true;
     historyToggle.hidden = true;
     historyBox.hidden = true;
+    guestReset.hidden = true;
     clearPrivateHistory();
     statusEl.textContent = "已退出登录";
   } catch (_error) {
@@ -126,6 +158,10 @@ logout.addEventListener("click", async () => {
     logout.hidden = false;
     historyToggle.hidden = false;
   }
+});
+
+guestReset.addEventListener("click", async () => {
+  await resetToGuest();
 });
 
 share.addEventListener("click", async () => {
@@ -151,3 +187,14 @@ share.addEventListener("click", async () => {
 });
 
 refreshSession();
+
+if (typeof window !== "undefined") {
+  const query = new URLSearchParams(window.location.search);
+  if (query.get("guest") === "1") {
+    resetToGuest().then((ok) => {
+      if (ok && window.history?.replaceState) {
+        window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+      }
+    });
+  }
+}

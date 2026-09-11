@@ -83,6 +83,6 @@ chatsite
 
 ## ChatImg 文生图服务
 
-安装 `"ChatSite[image-web]>=0.1.5,<0.2.0"` 后执行 `chatsite image serve`。根页面公开可用，访客可以继续按原 `/api/generate`、`/generated/<filename>`、`/api/images/<filename>` 路径生成、预览、下载和分享；登录是可选能力，登录后成功生成会写入当前账号自己的 SQLite 历史。历史接口只返回当前 Principal 的记录，访客不能枚举全局历史，也不会把旧匿名图片自动归到任意用户。
+安装 `"ChatSite[image-web]>=0.1.5,<0.2.0"` 后执行 `chatsite image serve`。根页面公开可用，访客可以继续按原 `/api/generate`、`/generated/<filename>`、`/api/images/<filename>` 路径生成、预览、下载和分享；登录是可选能力，登录后成功生成会写入当前账号自己的 SQLite 历史。历史接口只返回当前 Principal 的记录，访客不能枚举全局历史，也不会把旧匿名图片自动归到任意用户。若浏览器保留的 HttpOnly 登录 cookie 已失效，生图请求会先拒绝，用户需要点击“以访客继续”通过同源 `POST /api/guest/reset` 明确清除失效 cookie 后再匿名生成；有效登录会话仍必须走正常 CSRF 退出。
 
-配置由 ChatEnv 的 `chatsite-image` provider 管理，运行数据默认在 `~/.chatarch/chatsite/image/`。模型凭据仍由 ChatImg/OpenAI profile 读取，ChatSite 不复制 API key。可配置 `CHATSITE_IMAGE_LEGACY_GENERATED_DIR` 作为旧匿名图片的只读 URL 兼容入口；迁移计划是先挂载只读旧目录、核对访问日志和文件生命周期，再由运维另行授权复制或归档，默认服务不会移动、删除或改属旧文件。
+配置由 ChatEnv 的 `chatsite-image` provider 管理，运行数据默认在 `~/.chatarch/chatsite/image/`。模型凭据仍由 ChatImg/OpenAI profile 读取，ChatSite 不复制 API key。公开生图限流使用 ASGI 服务器按受信代理规则归一化后的 `request.client.host`，不会信任浏览器直接提交的 `X-Forwarded-For`。可配置 `CHATSITE_IMAGE_LEGACY_GENERATED_DIR` 作为旧匿名图片的只读 URL 兼容入口；迁移计划是先挂载只读旧目录、核对访问日志和文件生命周期，再由运维另行授权复制或归档，默认服务不会移动、删除或改属旧文件。
