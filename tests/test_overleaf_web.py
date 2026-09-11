@@ -171,6 +171,7 @@ def test_hub_uses_chatlogin_shared_login_bootstrap_and_separate_store(monkeypatc
     status, headers, data, raw = request(handler, "GET", "/login/session")
     assert status == 200 and data == {"authenticated": False}
     assert headers["Cache-Control"] == "no-store"
+    assert headers["X-Content-Type-Options"] == "nosniff"
 
     status, _headers, _data, raw = request(handler, "GET", "/login?next=/overleaf")
     assert status == 200
@@ -188,8 +189,10 @@ def test_hub_uses_chatlogin_shared_login_bootstrap_and_separate_store(monkeypatc
     assert data["email"] == "admin@example.test"
     assert data["next"] == "/"
     assert isinstance(data["csrf_token"], str)
+    assert headers["Cache-Control"] == "no-store"
+    assert headers["X-Content-Type-Options"] == "nosniff"
     cookie = headers["Set-Cookie"]
-    assert "chatsite_session=" in cookie and "HttpOnly" in cookie and "Secure" in cookie and "SameSite=Lax" in cookie
+    assert all(value in cookie for value in ("chatsite_session=", "HttpOnly", "Secure", "SameSite=Lax", "Path=/"))
 
     token = re.search(r"chatsite_session=([^;]+)", cookie).group(1)
     auth_db = tmp_path / "auth.sqlite3"
@@ -204,6 +207,7 @@ def test_hub_uses_chatlogin_shared_login_bootstrap_and_separate_store(monkeypatc
     status, headers, session, _raw = request(handler, "GET", "/api/me", cookie=f"chatsite_session={token}")
     assert status == 200
     assert headers["Cache-Control"] == "no-store"
+    assert headers["X-Content-Type-Options"] == "nosniff"
     assert session == {"authenticated": True, "email": "admin@example.test", "csrf_token": data["csrf_token"]}
 
 
@@ -236,5 +240,11 @@ def test_hub_rejects_legacy_rows_bad_csrf_cross_origin_and_rotated_credentials(m
     rotated_handler = web.make_handler(rotated_config, web.DataStore(rotated_config))
     assert request(rotated_handler, "GET", "/api/session", cookie=cookie)[0] == 401
 
-    assert request(handler, "POST", "/api/logout", cookie=cookie, csrf=data["csrf_token"])[0] == 200
+    logout_status, logout_headers, _logout_data, _logout_raw = request(
+        handler, "POST", "/api/logout", cookie=cookie, csrf=data["csrf_token"]
+    )
+    assert logout_status == 200
+    assert logout_headers["Cache-Control"] == "no-store"
+    assert logout_headers["X-Content-Type-Options"] == "nosniff"
+    assert "Path=/" in logout_headers["Set-Cookie"]
     assert request(handler, "GET", "/api/session", cookie=cookie)[0] == 401
