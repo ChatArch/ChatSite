@@ -131,9 +131,11 @@ async function loadCapabilities() {
     const response = await fetch(apiPath("api/capabilities"), { credentials: "same-origin" });
     const data = await readJson(response);
     if (!response.ok || !data.ok) throw new Error("capabilities unavailable");
-    const mode = data.api_mode === "responses" ? "Responses" : "Images";
-    const carrier = data.host_model ? ` · 载体 ${data.host_model}` : "";
-    capabilitiesEl.textContent = `${data.provider} · ${mode}${carrier} · 图像 ${data.image_model}`;
+    const mode = data.api_mode === "responses" ? "Responses" : data.api_mode === "images" ? "Images" : "自动路由";
+    const carrier = data.host_model ? `载体 ${data.host_model}` : "";
+    const preset = Array.isArray(data.models) ? data.models[0] : "";
+    const imageModel = data.image_model ? `图像 ${data.image_model}` : preset ? `预设 ${preset}` : "";
+    capabilitiesEl.textContent = [data.provider || "未知提供商", mode, carrier, imageModel].filter(Boolean).join(" · ");
   } catch (_error) {
     capabilitiesEl.textContent = "暂时无法读取生成通道，请稍后重试。";
   }

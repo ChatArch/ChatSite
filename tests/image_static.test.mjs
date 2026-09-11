@@ -191,6 +191,25 @@ test("stylesheet keeps warm paper forest clay system and waiting progress UI", (
   assert.match(CSS, /@media \(max-width: 560px\)/);
 });
 
+test("capability copy accepts the real backend response shape", async () => {
+  const elements = await loadApp((url) => {
+    if (url === "login/session") return Promise.resolve(response(true, { authenticated: false }));
+    if (url === "api/capabilities") {
+      return Promise.resolve(response(true, {
+        ok: true,
+        provider: "openai",
+        models: ["gpt-image-2-low", "gpt-image-2-medium", "gpt-image-2-high"],
+        sizes: ["1024x1024"],
+        modes: { text_to_image: true },
+      }));
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  });
+
+  assert.equal(elements.get("#capabilities").textContent, "openai · 自动路由 · 预设 gpt-image-2-low");
+  assert.doesNotMatch(elements.get("#capabilities").textContent, /undefined|null/);
+});
+
 test("prompt chips fill textarea and update counter", async () => {
   const elements = await loadApp((url) => {
     if (url === "login/session") return Promise.resolve(response(true, { authenticated: false }));
