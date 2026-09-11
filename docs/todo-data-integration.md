@@ -180,7 +180,7 @@ store.save_view(
 ## 备份与演进
 
 - 需要保留完整任务、会话与对话时，备份 `boards.sqlite3`、`web.sqlite3`、`auth.sqlite3` 及必要的私有 ChatEnv 配置；不要把备份公开。
-- 对在线 SQLite 使用 SQLite backup API，不能只复制主文件而忽略 WAL。要获得跨库一致的完整快照，先通过 supervisor 暂停本服务写入，完成两个备份再恢复。
+- 对在线 SQLite 使用 SQLite backup API，不能只复制主文件而忽略 WAL。要获得跨库一致的完整快照，先通过 supervisor 暂停本服务写入，完成上述数据库备份再恢复。
 - JSON 导出用于交换一个画布的节点与视图，不包含完整会话、幂等账本或所有撤销状态。正文按原样导出：用户自行写入的敏感内容不会自动消失。
 - 当前 DDL 随 Python 模块维护，没有独立 schema-migration CLI；结构升级应先备份并测试迁移。
 - Web 与领域包必须成对更新并核对真实安装代码；相同开发版本号并不能证明 wheel 内容相同。

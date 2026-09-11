@@ -1,3 +1,4 @@
+import hashlib
 import importlib
 import importlib.util
 from html.parser import HTMLParser
@@ -121,9 +122,13 @@ def test_chatlogin_sessions_persist_in_separate_digest_store_and_legacy_sessions
     assert recreated.get('/api/session').status_code == 401
 
     legacy = 'legacy-' + uuid.uuid4().hex
+    legacy_digest = hashlib.sha256(legacy.encode('utf-8')).hexdigest()
     with sqlite3.connect(web_db) as db:
         db.execute('create table if not exists sessions(token_hash text primary key, email text not null, expires real not null)')
-        db.execute('insert into sessions values(?,?,strftime("%s","now")+3600)', (legacy, 'user@example.test'))
+        db.execute('insert into sessions values(?,?,strftime("%s","now")+3600)', (legacy_digest, 'user@example.test'))
+        # Prove this fixture matches the valid lookup used by the old store.
+        assert db.execute('select email from sessions where token_hash=? and expires>?',
+                          (legacy_digest, time.time())).fetchone() == ('user@example.test',)
     legacy_client = TestClient(module.create_app(cfg, model_client=FakeModel()), base_url=cfg.public_url)
     legacy_client.headers['Origin'] = cfg.public_url
     legacy_client.cookies.set('chattodo_session', legacy, domain='todo.example.test')
