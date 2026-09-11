@@ -17,7 +17,7 @@ Todo 是 ChatSite 的独立功能入口；ChatTodo 提供任务树领域 API，�
 
 ## 配置与运行
 
-通过 `pip install "ChatSite[todo]>=0.1.4,<0.2.0"` 安装工作台；依赖解析会同时安装兼容的 ChatTodo 领域层（`>=0.1.0,<0.2.0`）。前端制品随 Python 包提供，部署时无需 Node 或运行时 CDN。
+通过 `pip install "ChatSite[todo]>=0.1.5,<0.2.0"` 安装工作台；依赖解析会同时安装兼容的 ChatTodo 领域层（`>=0.1.0,<0.2.0`）和 ChatLogin Web 登录核心（`>=0.1.2,<0.2.0`）。前端制品随 Python 包提供，部署时无需 Node 或运行时 CDN。
 
 模型可使用 Responses 或 Chat Completions。Ark Agent Plan 的 `doubao-seed-evolving` 可通过 Responses 协议接入；使用套餐服务时保持供应商的 Plan 专属入口，不自动回退到按量计费。配置检查应在安装了 Todo 的同一个环境执行，以确保 ChatEnv 能发现该 provider。
 
@@ -34,13 +34,15 @@ chatsite todo serve
 
 ## 协议与数据
 
-浏览器通过同源 session cookie 访问 API，写入还需要 CSRF token。模型连接在后端进行。Responses 使用无状态请求和按任务树隔离的本地历史，不把尚未回传 tool output 的响应 ID 当作下一次请求的有状态链。
+浏览器通过同源 session cookie 访问 API，写入还需要 CSRF token。`/login` 使用 ChatLogin 的共享登录页资源；`/api/login` 仍兼容 `{email,password}`，也接受共享表单的 `{username,password}`。模型连接在后端进行。Responses 使用无状态请求和按任务树隔离的本地历史，不把尚未回传 tool output 的响应 ID 当作下一次请求的有状态链。
+
+共享登录页提交前会读取公开的 `GET /login/session`：未登录、会话失效或退出后返回 `200 {"authenticated":false}`；有效会话只返回 `authenticated`、`email` 和 `csrf_token`，不返回密码、模型密钥或原始 session token，且响应禁止缓存。存储等非认证故障仍返回错误，不伪装成匿名。工作台恢复接口 `GET /api/session` 保持未登录 `401`。登录页地址与 bootstrap 地址遵循 `root_path`；未指定 `next` 或地址不安全时，页面与登录响应均默认当前挂载根（根站 `/`，例如挂载后 `/mounted/`），显式安全的站内 `next` 保持不变。
 
 普通对话可返回自然语言、Markdown 或 JSON 示例，不会修改画布。只有真正的 `todo_update` 工具调用及其严格校验的参数能改图；错误、未知或多重工具调用不会降级为可执行文本。已确认的模型生成失败可重新发送新请求，网络丢失的写入回执则保持原请求身份重试。
 
 节点字段为 `id / parent_id / title / status / body / order`。修改支持 `create / update / move / delete`；模型不能指定 owner 或访问其他任务树。HTTP 请求、节点数量、正文及模型响应都有边界限制。
 
-运行目录由 `TodoSettings.data_dir` 统一描述，默认位于 ChatArch home 下的 `chatsite/todo`。目录私有，数据库文件权限为 0600。导出只包含任务数据，不包含登录信息或模型密钥。
+运行目录由 `TodoSettings.data_dir` 统一描述，默认位于 ChatArch home 下的 `chatsite/todo`。目录私有，数据库文件权限为 0600。ChatLogin 会话保存在独立的 `auth.sqlite3`，任务、对话、提案和视图状态保存在原有业务数据库；升级到 0.1.5 后旧 Todo 本地会话不会迁移，用户需要重新登录一次，业务数据不迁移也不删除。导出只包含任务数据，不包含登录信息或模型密钥。
 
 ## 验收
 

@@ -67,7 +67,7 @@ chatsite
 
 ## Todo 任务树工作台
 
-安装 `"ChatSite[todo]>=0.1.4,<0.2.0"` 后执行 `chatsite todo serve`。SimpleMindMap 提供原生导图交互，Ant Design X 提供对话界面，ChatTodo 保持节点、版本、回执和撤销的领域职责；保留命名多画布、可选 Markdown 详情、手机触控和已有森林数据。前端随 Python 包分发，运行服务不需要 Node；维护界面源码时在 `frontend/todo/` 执行 `npm ci --ignore-scripts`、`npm test` 和 `npm run build`，并提交生成制品。
+安装 `"ChatSite[todo]>=0.1.5,<0.2.0"` 后执行 `chatsite todo serve`。SimpleMindMap 提供原生导图交互，Ant Design X 提供对话界面，ChatTodo 保持节点、版本、回执和撤销的领域职责；登录页与会话由 ChatLogin 共享核心提供，任务数据仍由 ChatTodo/ChatSite Todo 保存。前端随 Python 包分发，运行服务不需要 Node；维护界面源码时在 `frontend/todo/` 执行 `npm ci --ignore-scripts`、`npm test` 和 `npm run build`，并提交生成制品。
 
 - [工作台使用与验收](docs/todo-workbench.md)
 - [数据存储与模块接入](docs/todo-data-integration.md)：数据库、Node/Board/View、并发／幂等、Python/HTTP 与备份。

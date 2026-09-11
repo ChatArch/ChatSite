@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-09-11 - 0.1.5
+
+### 改进
+
+- Todo 登录页与会话接入 ChatLogin 共享核心，保留 `/api/login` 的 `email/password` JSON 响应兼容，并支持共享登录页的 `username` 字段。
+- Todo 会话改存独立 `auth.sqlite3`，只保存 token digest、Principal、到期时间和 CSRF secret；旧版本地会话需要重新登录一次，任务、对话、提案和视图数据不迁移也不删除。
+- 保留同源、CSRF、Secure/HttpOnly/SameSite cookie 与 8 次/300 秒登录限流，并增加持久会话、凭据轮换、共享登录资源和真实 TCP auth 回归覆盖。
+
 ## 2026-09-09 - 0.1.4
 
 ### 改进

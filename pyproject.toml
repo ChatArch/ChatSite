@@ -38,7 +38,7 @@ chatsite_todo = "chatsite.todo_config"
 dev = ["build", "pytest", "twine"]
 docs = ["mkdocs>=1.6,<2.0", "mkdocs-material>=9.5,<10.0", "mkdocs-static-i18n>=1.2,<2.0", "mike>=2.0,<3.0"]
 overleaf = ["ChatOL>=0.1.2,<0.2.0"]
-todo = ["ChatTodo>=0.1.0,<0.2.0", "fastapi>=0.115,<1.0", "uvicorn>=0.34,<1.0", "httpx>=0.27,<1.0"]
+todo = ["ChatTodo>=0.1.0,<0.2.0", "ChatLogin[web]>=0.1.2,<0.2.0", "fastapi>=0.115,<1.0", "uvicorn>=0.34,<1.0", "httpx>=0.27,<1.0"]
 
 [tool.setuptools.dynamic]
 version = {attr = "chatsite.__version__"}

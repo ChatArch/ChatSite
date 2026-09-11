@@ -1,6 +1,5 @@
 import importlib
 import importlib.util
-import sqlite3
 import stat
 
 import pytest
@@ -15,32 +14,14 @@ def store(tmp_path):
     return module().WebState(tmp_path / 'private' / 'web.sqlite3', session_ttl=3600)
 
 
-def test_sessions_are_hashed_persistent_and_revocable(tmp_path):
+def test_web_state_keeps_business_tables_and_throttle_without_auth_sessions(tmp_path):
     state = store(tmp_path)
-    session = state.create_session('user@example.test')
-    assert session['csrf_token'] != session['token']
-    assert state.session(session['token'])['email'] == 'user@example.test'
-    assert state.session('wrong') is None
-    assert state.check_csrf(session['token'], session['csrf_token'])
-    assert not state.check_csrf(session['token'], 'wrong')
-    rows = sqlite3.connect(state.path).execute('select token_hash from sessions').fetchall()
-    assert session['token'] not in str(rows)
     assert stat.S_IMODE(state.path.stat().st_mode) == 0o600
     assert stat.S_IMODE(state.path.parent.stat().st_mode) == 0o700
-    second = module().WebState(state.path)
-    assert second.session(session['token'])
-    second.logout(session['token'])
-    assert state.session(session['token']) is None
-
-
-def test_expired_session_is_rejected(tmp_path, monkeypatch):
-    m = module()
-    now = [1000.0]
-    monkeypatch.setattr(m.time, 'time', lambda: now[0])
-    state = m.WebState(tmp_path / 'private/web.sqlite3', session_ttl=10)
-    session = state.create_session('user@example.test')
-    now[0] += 11
-    assert state.session(session['token']) is None
+    with state.connection() as db:
+        tables = {row[0] for row in db.execute("select name from sqlite_master where type='table'")}
+    assert 'sessions' not in tables
+    assert {'login_failures', 'conversations', 'messages', 'presentations'} <= tables
 
 
 def test_login_throttle_is_bounded_and_clearable(tmp_path):

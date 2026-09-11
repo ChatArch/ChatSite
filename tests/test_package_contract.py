@@ -15,6 +15,7 @@ def test_runtime_dependency_and_provider_contracts():
     assert '"click>=8.0,<9.0"' in pyproject
     assert '"chatstyle>=0.2.0,<0.3.0"' in pyproject
     assert '"chatenv>=0.2.10,<0.3.0"' in pyproject
+    assert '"ChatLogin[web]>=0.1.2,<0.2.0"' in pyproject
     assert '[project.entry-points."chatenv.configs"]' in pyproject
     assert 'chatsite = "chatsite.config"' in pyproject
 

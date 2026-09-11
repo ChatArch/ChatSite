@@ -16,7 +16,7 @@ The Todo feature belongs to ChatSite. ChatTodo supplies reusable task-forest ope
 
 ## Configuration and execution
 
-Install `"ChatSite[todo]>=0.1.4,<0.2.0"` with pip. The extra resolves the compatible ChatTodo domain dependency (`>=0.1.0,<0.2.0`). The Python package includes the frontend build; deployment requires neither Node nor a runtime CDN.
+Install `"ChatSite[todo]>=0.1.5,<0.2.0"` with pip. The extra resolves the compatible ChatTodo domain dependency (`>=0.1.0,<0.2.0`) and ChatLogin Web login core (`>=0.1.2,<0.2.0`). The Python package includes the frontend build; deployment requires neither Node nor a runtime CDN.
 
 Models may use Responses or Chat Completions. Ark Agent Plan supports `doubao-seed-evolving` through Responses; retain the provider's Plan endpoint without automatic pay-as-you-go fallback. Run configuration checks in the same environment that has Todo installed so ChatEnv can discover its provider.
 
@@ -33,13 +33,15 @@ Checks send one bounded real no-edit model request. The service binds to loopbac
 
 ## Data and protocol
 
-Browser requests use same-origin session cookies and write-time CSRF validation. Model requests originate on the server. Stateless Responses calls use per-board local history; unfinished function-call response IDs are not reused as provider-side conversation chains.
+Browser requests use same-origin session cookies and write-time CSRF validation. `/login` uses ChatLogin's shared login page assets; `/api/login` remains compatible with `{email,password}` and also accepts the shared form's `{username,password}`. Model requests originate on the server. Stateless Responses calls use per-board local history; unfinished function-call response IDs are not reused as provider-side conversation chains.
+
+Before submitting, the shared login page reads public `GET /login/session`: anonymous, invalid/expired or logged-out sessions receive `200 {"authenticated":false}`. Valid sessions expose only `authenticated`, `email` and `csrf_token`, never passwords, model keys or the raw session token; responses are not cached. Non-authentication failures such as storage errors remain errors, not anonymous responses. The workbench recovery endpoint `GET /api/session` still returns `401` when unauthenticated. Login and bootstrap URLs honor `root_path`; a missing or unsafe `next` defaults to the current mount root in both the page and login response (`/` at the site root, for example `/mounted/` when mounted). Explicit safe same-site `next` paths are preserved.
 
 Ordinary conversation may return natural language, Markdown or JSON examples without modifying the board. Edits require a real `todo_update` tool call with validated arguments; malformed, unknown or multiple tool calls never become executable text. Definite model-generation failures allow a new user request, while missing write receipts retain the original request identity for retry.
 
 Nodes contain `id`, `parent_id`, `title`, `status`, `body`, and `order`. Operations are `create`, `update`, `move`, and `delete`. Model output cannot select an owner or another board. Request sizes, node counts, content sizes and model responses are bounded.
 
-`TodoSettings.data_dir` describes the runtime root, normally `chatsite/todo` under ChatArch home. Directories and SQLite files are private. Exports do not include login or model credentials.
+`TodoSettings.data_dir` describes the runtime root, normally `chatsite/todo` under ChatArch home. Directories and SQLite files are private. ChatLogin sessions live in a separate `auth.sqlite3`; tasks, conversations, proposals and view state stay in the existing business databases. Upgrading to 0.1.5 does not migrate old Todo local sessions, so users sign in once again; business data is not migrated or deleted. Exports do not include login or model credentials.
 
 ## Development and acceptance
 

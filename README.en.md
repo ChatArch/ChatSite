@@ -69,6 +69,6 @@ Read `DEVELOP.md` and `AGENTS.md` before expanding commands, and keep `--tree`, 
 
 ## Todo workbench
 
-The Todo workbench uses SimpleMindMap for native map editing and Ant Design X for conversations, while ChatTodo retains ownership of nodes, revisions, receipts and undo. Named canvases, optional Markdown details, touch interaction and existing forest data remain supported. Install `"ChatSite[todo]>=0.1.4,<0.2.0"` and run `chatsite todo serve` or `chatsite todo check`; the Python package includes the frontend and needs no Node runtime. To maintain UI source, run `npm ci --ignore-scripts`, `npm test`, and `npm run build` in `frontend/todo/` and commit the generated assets.
+The Todo workbench uses SimpleMindMap for native map editing and Ant Design X for conversations, while ChatTodo retains ownership of nodes, revisions, receipts and undo. The login page and browser sessions use the shared ChatLogin core; task data remains in ChatTodo/ChatSite Todo storage. Install `"ChatSite[todo]>=0.1.5,<0.2.0"` and run `chatsite todo serve` or `chatsite todo check`; the Python package includes the frontend and needs no Node runtime. To maintain UI source, run `npm ci --ignore-scripts`, `npm test`, and `npm run build` in `frontend/todo/` and commit the generated assets.
 
 The `chatsite-todo` ChatEnv provider owns configuration. Responses and Chat Completions are supported; Plan providers retain their explicit Plan endpoint without pay-as-you-go fallback. See [workbench usage](docs/todo-workbench.md) and [data integration](docs/todo-data-integration.md).

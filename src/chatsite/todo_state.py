@@ -1,9 +1,8 @@
-"""Private SQLite state for Todo web sessions and model conversations."""
+"""Private SQLite state for Todo login throttling and model conversations."""
 from __future__ import annotations
 
 from contextlib import contextmanager
 import hashlib
-import hmac
 import json
 import os
 from pathlib import Path
@@ -47,7 +46,7 @@ def _request_id(value: str) -> None:
 
 
 class WebState:
-    """Short-lived auth and replay-safe, per-owner/per-board model state."""
+    """Replay-safe, per-owner/per-board model state plus login throttling."""
 
     def __init__(self, path: str | Path, session_ttl: int = 1209600):
         self.path = Path(path).absolute()
@@ -69,8 +68,6 @@ class WebState:
         with self.connection() as db:
             db.executescript("""
                 PRAGMA journal_mode=WAL;
-                CREATE TABLE IF NOT EXISTS sessions(
-                    token_hash TEXT PRIMARY KEY, email TEXT NOT NULL, expires REAL NOT NULL);
                 CREATE TABLE IF NOT EXISTS login_failures(client_hash TEXT NOT NULL, at REAL NOT NULL);
                 CREATE INDEX IF NOT EXISTS login_window ON login_failures(client_hash,at);
                 CREATE TABLE IF NOT EXISTS conversations(
@@ -115,36 +112,6 @@ class WebState:
             raise
         finally:
             db.close()
-
-    def create_session(self, email: str) -> dict:
-        token = secrets.token_urlsafe(48)
-        with self.connection() as db:
-            db.execute("DELETE FROM sessions WHERE expires < ?", (time.time(),))
-            db.execute("INSERT INTO sessions VALUES(?,?,?)", (_hash(token), email, time.time() + self.session_ttl))
-        return {"token": token, "email": email, "csrf_token": _hash("csrf:" + token)}
-
-    def session(self, token: str | None) -> dict | None:
-        if not isinstance(token, str) or not token or len(token) > 256:
-            return None
-        with self.connection() as db:
-            row = db.execute("SELECT email,expires FROM sessions WHERE token_hash=?", (_hash(token),)).fetchone()
-            if not row:
-                return None
-            if row["expires"] <= time.time():
-                db.execute("DELETE FROM sessions WHERE token_hash=?", (_hash(token),))
-                return None
-        return {"email": row["email"], "csrf_token": _hash("csrf:" + token)}
-
-    def check_csrf(self, token: str | None, csrf: str | None) -> bool:
-        session = self.session(token)
-        return bool(session and isinstance(csrf, str) and hmac.compare_digest(
-            session["csrf_token"].encode(), csrf.encode()
-        ))
-
-    def logout(self, token: str | None) -> None:
-        if token:
-            with self.connection() as db:
-                db.execute("DELETE FROM sessions WHERE token_hash=?", (_hash(token),))
 
     def login_allowed(self, client: str) -> bool:
         with self.connection() as db:
