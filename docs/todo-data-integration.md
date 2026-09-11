@@ -12,6 +12,7 @@
         │
         └─ 会话 + CSRF → ChatSite Todo HTTP API
                              ├─ BoardStore
+                             ├─ auth.sqlite3
                              ├─ web.sqlite3
                              └─ 服务端模型适配器
 ```
@@ -30,7 +31,8 @@
   envs/ChatSiteTodo/          # ChatEnv typed profiles，包含敏感配置
   chatsite/todo/
     boards.sqlite3          # 领域事实与回执
-    web.sqlite3             # Web 会话、对话、模型请求与提案
+    auth.sqlite3            # ChatLogin 会话 digest 与 CSRF
+    web.sqlite3             # 登录限流、对话、模型请求与提案
     web.sqlite3-wal          # 运行时可能存在的 SQLite WAL
     web.sqlite3-shm
 ```
@@ -48,11 +50,14 @@
 
 每次调用独立连接并使用事务；写入校验失败不会留下部分节点变更。常规审计／请求回执有保留窗口（当前 1000）；不要把幂等回执当成永久去重账本。撤销快照与审计保留窗口分离。
 
+### `auth.sqlite3`
+
+Todo 0.1.5 起浏览器会话由 ChatLogin 共享核心签发并保存在独立数据库。存储层只接收 session token 的 SHA256 digest、Principal、到期时间与 CSRF secret，不保存原始 token；会话有容量上限、TTL，到期或退出后失效。Principal 的 owner 仍是配置的登录邮箱，并绑定当前配置的邮箱／密码；旋转凭据后旧会话不会被重新接受。旧版 `web.sqlite3.sessions` 会话不会迁移，用户需要重新登录一次，不会迁移或删除业务数据。
+
 ### `web.sqlite3`
 
 | 表 | 用途 |
 |---|---|
-| `sessions` | session token 的哈希、登录邮箱、到期时间；不保存原始 token |
 | `login_failures` | 登录限流窗口 |
 | `conversations` | 按 `(owner, board_id)` 唯一的对话与非秘密响应元信息 |
 | `messages` | 用户／助手内容，关联的 change／proposal；读取返回最近 200 条，不等于物理删除更早消息 |
@@ -63,7 +68,7 @@
 
 模型生成结果先写入请求状态，再应用领域变更，便于重放时避免再次调用模型。当前实现使用本地、按画布隔离的对话历史，向 Responses 发无状态请求；不会串用其他画布的响应链。
 
-删除两个数据库中的内容不是一个跨库事务。领域画布已经删除但会话清理失败时，API 返回 `board_deleted=true, cleanup_pending=true`；再次提交同一画布的明确删除请求可完成有界恢复，不应将已删除误报为“删除失败”。
+删除业务数据库中的内容不是一个跨库事务。领域画布已经删除但会话清理失败时，API 返回 `board_deleted=true, cleanup_pending=true`；再次提交同一画布的明确删除请求可完成有界恢复，不应将已删除误报为“删除失败”。
 
 导入的布局写入若失败，会补偿撤回新画布。`import_storage_error` 表示已撤回；`import_rollback_pending` 表示撤回结果待核对，`import_cleanup_pending` 表示画布已撤回但关联状态还需清理。后两种错误会给出本次画布 ID，可通过明确的 DELETE 请求恢复，不要再次导入来掩盖未知结果。并发修改导致版本冲突时不会强制删除用户的新编辑。
 
@@ -137,7 +142,7 @@ store.save_view(
 
 ## HTTP 接入
 
-所有业务接口同源、会话认证。先 `POST /api/login`，复用返回的 HttpOnly session cookie；从登录结果或 `GET /api/session` 取得 CSRF token。写入发送 `X-CSRF-Token`，浏览器 Origin 必须被允许。没有凭据的第三方不能直接调用。
+所有业务接口同源、会话认证。先通过共享 `/login` 页面或 `POST /api/login` 登录，复用返回的 HttpOnly session cookie；`/api/login` 保持 `{email,password}` 兼容，也接受 `{username,password}`。从登录结果或 `GET /api/session` 取得 CSRF token。写入发送 `X-CSRF-Token`，浏览器 Origin 必须被允许且不能重复。没有凭据的第三方不能直接调用。
 
 | 方法与路径 | 输入／输出 |
 |---|---|
@@ -174,8 +179,8 @@ store.save_view(
 
 ## 备份与演进
 
-- 需要保留完整任务与对话时，备份两个数据库及必要的私有 ChatEnv 配置；不要把备份公开。
-- 对在线 SQLite 使用 SQLite backup API，不能只复制主文件而忽略 WAL。要获得跨库一致的完整快照，先通过 supervisor 暂停本服务写入，完成两个备份再恢复。
+- 需要保留完整任务、会话与对话时，备份 `boards.sqlite3`、`web.sqlite3`、`auth.sqlite3` 及必要的私有 ChatEnv 配置；不要把备份公开。
+- 对在线 SQLite 使用 SQLite backup API，不能只复制主文件而忽略 WAL。要获得跨库一致的完整快照，先通过 supervisor 暂停本服务写入，完成上述数据库备份再恢复。
 - JSON 导出用于交换一个画布的节点与视图，不包含完整会话、幂等账本或所有撤销状态。正文按原样导出：用户自行写入的敏感内容不会自动消失。
 - 当前 DDL 随 Python 模块维护，没有独立 schema-migration CLI；结构升级应先备份并测试迁移。
 - Web 与领域包必须成对更新并核对真实安装代码；相同开发版本号并不能证明 wheel 内容相同。

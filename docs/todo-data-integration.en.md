@@ -13,9 +13,10 @@ The default data directory is `$CHATARCH_HOME/chatsite/todo/`, normally `~/.chat
 | Database | Tables and responsibility |
 |---|---|
 | `boards.sqlite3` | `boards` stores owner/title/revisions and JSON `nodes`/`view`; `changes` stores actual diffs; `undo_stack` stores node snapshots; `requests` stores request fingerprints and replay receipts |
-| `web.sqlite3` | `sessions`, `login_failures`, `conversations`, `messages`, `chat_requests`, `proposals`, `board_deletions`, and owner/board-scoped `presentations` |
+| `auth.sqlite3` | ChatLogin session digests, principal, expiry and CSRF secret |
+| `web.sqlite3` | `login_failures`, `conversations`, `messages`, `chat_requests`, `proposals`, `board_deletions`, and owner/board-scoped `presentations` |
 
-Directories are private and database files use mode 0600. Web state uses SQLite WAL, so sidecar files may exist. Session tokens are stored as hashes, not plaintext tokens. Conversation messages may contain private user content even though application API keys are not stored there.
+Directories are private and database files use mode 0600. Web state uses SQLite WAL, so sidecar files may exist. Since 0.1.5, browser sessions are issued by the shared ChatLogin core and stored in `auth.sqlite3`; only SHA256 token digests cross the store boundary, never plaintext tokens. The principal owner remains the configured login email and is bound to the current configured email/password, so credential rotation rejects older sessions. Legacy Todo sessions in `web.sqlite3.sessions` are not migrated; users sign in once again and business data is not migrated or deleted. Conversation messages may contain private user content even though application API keys are not stored there.
 
 Model request state advances through `pending → generated → done/failed`. Generation is saved before domain edits to avoid another model call during recovery. Model calls use stateless Responses with per-board local history. Message reads return the latest 200 messages; this is not a physical retention guarantee. Domain audit/request receipts use a bounded window (currently 1000); undo snapshots are separate. Idempotency is not a permanent external deduplication ledger.
 
@@ -66,7 +67,7 @@ store.save_view(current["id"], owner, current["view"],
 
 Domain-only deletion does not clean ChatSite conversations. Prefer the coordinated HTTP delete path for a Web-managed board.
 
-HTTP clients authenticate through `/api/login`, retain its HttpOnly session cookie, obtain CSRF from login or `/api/session`, and include `X-CSRF-Token` on writes. Browser origins must be allowed.
+HTTP clients authenticate through the shared `/login` page or `/api/login`, retain its HttpOnly session cookie, obtain CSRF from login or `/api/session`, and include `X-CSRF-Token` on writes. `/api/login` remains compatible with `{email,password}` and also accepts `{username,password}`. Browser origins must be allowed and must not be duplicated.
 
 | API | Contract |
 |---|---|
@@ -89,7 +90,7 @@ Errors use `{"error":{"code":"...","message":"..."}}`. Distinguish 401 auth, 403
 
 ## Backup and evolution
 
-For a complete backup, include both databases and required private configuration. Use SQLite backup APIs for online files; copying only the main WAL database file is unsafe. For a cross-database consistent snapshot, pause writes through the supervisor, back up both, then resume.
+For a complete backup of tasks, sessions and conversations, include `boards.sqlite3`, `web.sqlite3`, `auth.sqlite3` and required private configuration. Use SQLite backup APIs for online files; copying only the main WAL database file is unsafe. For a cross-database consistent snapshot, pause writes through the supervisor, back up the databases, then resume.
 
 Board JSON is an interchange format, not a complete backup of messages, receipts or undo history. Application credentials are excluded, but any sensitive content manually entered in node Markdown remains part of its content.
 

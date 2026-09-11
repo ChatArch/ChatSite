@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ChatImg 文生图</title>
+  <link rel="stylesheet" href="assets/image.css">
+</head>
+<body>
+  <main class="shell" data-login-url="/api/login" data-session-url="/login/session" data-logout-url="/api/logout">
+    <header class="masthead">
+      <div class="share-top">
+        <nav class="account" aria-label="账号">
+          <span id="identity" class="identity" hidden></span>
+          <a id="loginLink" class="account-action" href="login?next=./">登录</a>
+          <button id="historyToggle" class="account-action" type="button" hidden>我的历史</button>
+          <button id="logout" class="account-action" type="button" hidden>退出</button>
+        </nav>
+        <button class="share-button" id="share-button" type="button" disabled>Share</button>
+        <span class="share-hint" id="share-hint">生成图片后可分享</span>
+      </div>
+      <div>
+        <div class="brandline">
+          <img class="brand-logo" src="assets/logo.png" alt="ChatImg logo">
+          <div class="eyebrow">ChatImg · text to image</div>
+          <a class="source-icon" href="https://github.com/ChatArch/ChatImg" target="_blank" rel="noreferrer" aria-label="GitHub 项目" title="GitHub 项目">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82A7.65 7.65 0 0 1 8 3.86c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"></path></svg>
+          </a>
+        </div>
+        <h1>把一句话变成一张图。</h1>
+      </div>
+      <p class="intro">纯文生图：通过 ChatImg 返回图片和安全元数据。<span id="capabilities">正在读取生成通道（支持 Responses / Images）。</span></p>
+    </header>
+
+    <section class="workspace">
+      <form class="panel" id="generateForm">
+        <div class="section-title">
+          <span>Prompt</span>
+          <span class="counter" id="counter">0 / 1800</span>
+        </div>
+        <textarea id="prompt" maxlength="1800" required placeholder="例如：一枚温暖纸张质感的产品图标，绿色叶片和发光镜头，白色背景。"></textarea>
+
+        <section class="suggestions" aria-label="prompt examples">
+          <div class="section-title"><span>可直接试的灵感</span><span>点击填入</span></div>
+          <div class="chips" id="chips"></div>
+        </section>
+
+        <section class="settings" aria-label="generation settings">
+          <div class="section-title"><span>生成设置</span><span>先保持 low 更快</span></div>
+          <div class="row">
+            <label>模型
+              <select id="model">
+                <option value="gpt-image-2-low">gpt-image-2-low</option>
+                <option value="gpt-image-2-medium">gpt-image-2-medium</option>
+                <option value="gpt-image-2-high">gpt-image-2-high</option>
+              </select>
+            </label>
+            <label>尺寸
+              <select id="size">
+                <option value="1024x1024">1024x1024</option>
+                <option value="1536x1024">1536x1024</option>
+                <option value="1024x1536">1024x1536</option>
+              </select>
+            </label>
+            <label>质量
+              <select id="quality">
+                <option value="">跟随模型</option>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <button class="primary" id="submit" type="submit">生成图片</button>
+        <button id="guestReset" class="account-action guest-reset" type="button" hidden>以访客继续</button>
+        <p class="status" id="status" role="status"></p>
+      </form>
+
+      <aside class="preview">
+        <div class="preview-head">
+          <h2 class="preview-title">生成结果</h2>
+          <a id="download" class="account-action" href="#" download hidden>下载</a>
+        </div>
+        <div class="canvas" id="canvas">
+          <p class="placeholder"><span class="orb"></span><strong>画面会在这里展开</strong>输入主题、风格、构图和质感后开始生成。</p>
+        </div>
+        <div class="meta" id="meta"></div>
+        <section class="share-result" id="share-result" aria-label="分享结果" hidden>
+          <div class="share-row">
+            <input class="share-url" id="share-url" readonly aria-label="公开分享链接">
+            <span class="share-actions">
+              <button class="share-action" id="copy-share" type="button">复制链接</button>
+              <a class="share-action" id="open-share" target="_blank" rel="noopener noreferrer">打开图片</a>
+            </span>
+          </div>
+          <div class="share-status" id="share-status" aria-live="polite"></div>
+        </section>
+      </aside>
+
+      <aside id="history" class="history" hidden>
+        <div class="preview-head">
+          <h2 class="preview-title">我的历史</h2>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </aside>
+    </section>
+  </main>
+  <script src="assets/image.js"></script>
+</body>
+</html>

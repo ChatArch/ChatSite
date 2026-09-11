@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import replace
-import hashlib
-import hmac
 from importlib import resources
 import json
 import logging
@@ -13,19 +11,20 @@ from pathlib import Path
 import re
 import sqlite3
 import threading
+from urllib.parse import quote
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.concurrency import run_in_threadpool
 
 from chattodo.board import BoardError, BoardStore, apply_operations
 from chatsite import __version__
+from chatsite.todo_auth import COOKIE, TodoAuth, login_asset
 from chatsite.todo_config import TodoSettings
 from chatsite.todo_model import ModelClient, ModelError, enforce_scope, requires_confirmation
 from chatsite.todo_state import StateError, WebState, validate_layout
 
-COOKIE = "chattodo_session"
 MAX_BODY = 2_000_000
 LOGGER = logging.getLogger(__name__)
 
@@ -96,22 +95,25 @@ async def _body(request: Request) -> dict:
     return payload
 
 
-def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> FastAPI:
+def create_app(config: TodoSettings, *, model_client=None, board_store=None, login_ui=None) -> FastAPI:
     app = FastAPI(title="ChatTodo", docs_url=None, redoc_url=None, openapi_url=None)
     boards = board_store or BoardStore(config.data_dir / "boards.sqlite3")
     web = WebState(config.data_dir / "web.sqlite3", config.session_ttl)
+    auth = TodoAuth.create(config, login_ui=login_ui)
     model = model_client if model_client is not None else ModelClient(
         base_url=config.api_base, api_key=config.api_key, model=config.model,
         protocol=config.protocol, timeout=config.model_timeout,
     )
     model_slots = threading.BoundedSemaphore(2)
-    app.state.boards, app.state.web_state, app.state.config = boards, web, config
+    app.state.boards, app.state.web_state, app.state.todo_auth, app.state.config = boards, web, auth, config
 
     @app.middleware("http")
     async def security(request: Request, next_handler):
-        origin = request.headers.get("origin")
+        origins = request.headers.getlist("origin")
+        origin = origins[0] if len(origins) == 1 else None
         if request.method not in {"GET", "HEAD", "OPTIONS"} and (
-            (origin and origin.rstrip("/") not in config.allowed_origins)
+            (len(origins) > 1)
+            or (origin and origin.rstrip("/") not in config.allowed_origins)
             or request.headers.get("sec-fetch-site") == "cross-site"
         ):
             response = JSONResponse(_error("bad_origin", "拒绝跨站写入请求"), status_code=403)
@@ -145,12 +147,9 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
 
     async def require_user(request: Request) -> str:
         token = request.cookies.get(COOKIE)
-        session = web.session(token)
-        if not session:
-            raise StateError("unauthenticated", "请先登录", 401)
-        if request.method not in {"GET", "HEAD", "OPTIONS"} and not web.check_csrf(token, request.headers.get("x-csrf-token")):
-            raise StateError("bad_csrf", "会话校验失败，请重新登录后重试", 403)
-        return session["email"]
+        if request.method in {"GET", "HEAD", "OPTIONS"}:
+            return auth.require_read(token)
+        return auth.require_write(token, request.headers.get("x-csrf-token"))
 
     @app.get("/health")
     def health():
@@ -160,7 +159,11 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
         return {"ok": True, "service": "chattodo", "version": __version__, "build": build, "domain_build": os.getenv("CHATSITE_TODO_BUILD_DOMAIN", "dev"), "model_configured": config.configured}
 
     @app.get("/")
-    def index():
+    def index(request: Request):
+        root = request.scope.get("root_path", "").rstrip("/")
+        if auth.session_payload(request.cookies.get(COOKIE)) is None:
+            next_url = quote(root + "/" if root else "/", safe="/")
+            return RedirectResponse(f"{root}/login?next={next_url}", status_code=303)
         try:
             html = resources.files("chatsite").joinpath("todo_static", "index.html").read_text(encoding="utf-8")
         except FileNotFoundError:
@@ -170,36 +173,51 @@ def create_app(config: TodoSettings, *, model_client=None, board_store=None) -> 
     assets = Path(str(resources.files("chatsite").joinpath("todo_static")))
     app.mount("/assets", StaticFiles(directory=assets, check_dir=False), name="todo-assets")
 
+    @app.get("/login")
+    def login_page(request: Request, next: str | None = None):
+        return auth.login_page(request, next)
+
+    @app.get("/login/assets/{name}")
+    def shared_login_asset(name: str):
+        return login_asset(name)
+
+    @app.get("/login/session")
+    def login_session(request: Request):
+        # The shared login JS probes before POST, including for anonymous users.
+        current = auth.session_payload(request.cookies.get(COOKIE))
+        return current if current is not None else {"authenticated": False}
+
     @app.post("/api/login")
     async def login(request: Request):
         client_id = request.client.host if request.client else "unknown"
         if not web.login_allowed(client_id):
             raise StateError("rate_limited", "登录尝试过多，请五分钟后再试", 429)
         body = await _body(request)
-        _fields(body, {"email", "password"}, {"email", "password"})
-        email, password = body["email"], body["password"]
-        valid = isinstance(email, str) and isinstance(password, str) and len(email) <= 254 and len(password) <= 1024
-        if valid:
-            valid = hmac.compare_digest(hashlib.sha256(email.encode()).digest(), hashlib.sha256(config.admin_email.encode()).digest())
-            valid = hmac.compare_digest(hashlib.sha256(password.encode()).digest(), hashlib.sha256(config.admin_password.encode()).digest()) and valid
-        if not valid:
+        root = request.scope.get("root_path", "").rstrip("/")
+        try:
+            payload, token = auth.login(body, request.cookies.get(COOKIE), request.headers.get("x-csrf-token"),
+                                       default_next=f"{root}/")
+        except StateError as exc:
+            if exc.code == "bad_login":
+                web.login_failure(client_id)
+            raise
+        if not payload["authenticated"]:
             web.login_failure(client_id)
             raise StateError("bad_login", "账号或密码错误", 401)
         web.clear_login_failures(client_id)
-        session = web.create_session(config.admin_email)
-        response = JSONResponse({"authenticated": True, "email": session["email"], "csrf_token": session["csrf_token"]})
-        response.set_cookie(COOKIE, session["token"], httponly=True, secure=config.secure_cookie,
+        response = JSONResponse(payload)
+        response.set_cookie(COOKIE, token, httponly=True, secure=config.secure_cookie,
                             samesite="lax", max_age=config.session_ttl, path="/")
         return response
 
     @app.get("/api/session")
     async def session(request: Request, owner=Depends(require_user)):
-        current = web.session(request.cookies.get(COOKIE))
+        current = auth.session_payload(request.cookies.get(COOKIE))
         return {"authenticated": True, "email": owner, "csrf_token": current["csrf_token"]}
 
     @app.post("/api/logout")
     async def logout(request: Request, _owner=Depends(require_user)):
-        web.logout(request.cookies.get(COOKIE))
+        auth.logout(request.cookies.get(COOKIE), request.headers.get("x-csrf-token"))
         response = JSONResponse({"ok": True})
         response.delete_cookie(COOKIE, path="/", secure=config.secure_cookie, httponly=True, samesite="lax")
         return response

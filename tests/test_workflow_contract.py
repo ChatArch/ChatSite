@@ -33,11 +33,14 @@ def test_docs_workflows_use_chatarch_site_url():
     assert "chatsite --tree-brief" in ci
     assert "python -m twine check dist/*" in ci
     assert "python -m pip install --force-reinstall dist/*.whl" in ci
-    assert '.[dev,docs,todo]' in ci
+    assert "assert 'site-packages' in chatsite.__file__" in ci
+    assert "working-directory: /" in ci
+    assert '.[dev,docs,overleaf,todo,image-web]' in ci
     assert 'working-directory: frontend/todo' in ci
     assert 'npm ci --ignore-scripts' in ci
     assert 'run: npm run check' in ci
     assert 'git diff --exit-code -- src/chatsite/todo_static' in ci
+    assert 'node --test tests/image_static.test.mjs' in ci
     assert 'node --test tests/todo_frontend/*.cjs' not in ci
 
 

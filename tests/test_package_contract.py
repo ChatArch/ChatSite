@@ -15,8 +15,14 @@ def test_runtime_dependency_and_provider_contracts():
     assert '"click>=8.0,<9.0"' in pyproject
     assert '"chatstyle>=0.2.0,<0.3.0"' in pyproject
     assert '"chatenv>=0.2.10,<0.3.0"' in pyproject
+    assert '"ChatLogin[web]>=0.1.2,<0.2.0"' in pyproject
+    assert '"ChatImg>=0.1.8,<0.2.0"' in pyproject
+    assert '"ChatShare>=0.2.5,<0.3.0"' in pyproject
+    assert 'chatsite-web = "chatsite.web:main"' in pyproject
+    assert 'chatsite-image = "chatsite.image_web:main"' in pyproject
     assert '[project.entry-points."chatenv.configs"]' in pyproject
     assert 'chatsite = "chatsite.config"' in pyproject
+    assert 'chatsite_image = "chatsite.image_config"' in pyproject
 
 
 def test_checked_in_cli_trees_match_registered_runtime_output():
@@ -29,6 +35,7 @@ def test_checked_in_cli_trees_match_registered_runtime_output():
     assert "[--profile PROFILE]" in full.output
     assert "[--profile PROFILE]" not in brief.output
     assert "todo" in full.output and "todo" in brief.output
+    assert "image" in full.output and "image" in brief.output
     tree_block = f"```text\n{full.output}```"
     for relative_path in (
         "README.md",
