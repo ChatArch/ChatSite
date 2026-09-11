@@ -1,0 +1,787 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="ChatArch Web/service entrypoints and collaborative workbenches">
+      
+      
+      
+        <link rel="canonical" href="https://arch.gh.wzhecnu.cn/ChatSite/en/todo-data-integration/">
+      
+      
+        <link rel="prev" href="../image-workbench/">
+      
+      
+      
+        
+          <link rel="alternate" href="../../todo-data-integration/" hreflang="zh">
+        
+          <link rel="alternate" href="./" hreflang="en">
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Data and Integration - ChatSite Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#data-storage-and-integration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../" title="ChatSite Documentation" class="md-header__button md-logo" aria-label="ChatSite Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ChatSite Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Data and Integration
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="Select language">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="../../todo-data-integration/" hreflang="zh" class="md-select__link">
+              中文
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ChatArch/ChatSite" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ChatArch/ChatSite
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../" title="ChatSite Documentation" class="md-nav__button md-logo" aria-label="ChatSite Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ChatSite Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ChatArch/ChatSite" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ChatArch/ChatSite
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli-tree/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI Tree
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overleaf-editor-web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overleaf Editor
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../todo-workbench/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Todo Workbench
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../image-workbench/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ChatImg Image Workbench
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data and Integration
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Data and Integration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#boundaries-and-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundaries and storage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration choices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backup-and-evolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backup and evolution
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#boundaries-and-storage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Boundaries and storage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Model
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#integration-choices" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Integration choices
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#backup-and-evolution" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backup and evolution
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="data-storage-and-integration">Data Storage and Integration<a class="headerlink" href="#data-storage-and-integration" title="Permanent link">&para;</a></h1>
+<p>A UI <strong>Canvas is an API Board</strong>. Each board independently stores its node forest, view and conversation. Empty Markdown bodies are valid: users can brainstorm using titles alone.</p>
+<h2 id="boundaries-and-storage">Boundaries and storage<a class="headerlink" href="#boundaries-and-storage" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>ChatTodo</strong> owns validated domain operations, persistence, revisions, idempotency, history and undo.</li>
+<li><strong>ChatSite</strong> owns browser/session/HTTP behavior, model calls and proposals.</li>
+<li>Integrating services own their project/event identities and mappings to board IDs. Do not add undeclared fields or write SQL directly. Automatic ChatAssign/ChatBoard synchronization, team membership management and a standalone Bearer-token API are not implemented.</li>
+</ul>
+<p>The default data directory is <code>$CHATARCH_HOME/chatsite/todo/</code>, normally <code>~/.chatarch/chatsite/todo/</code>. <code>CHATSITE_TODO_DATA_DIR</code> overrides it; <code>TodoSettings.data_dir</code> is authoritative. Typed configuration belongs under the <code>ChatSiteTodo</code> ChatEnv namespace, not in the browser or source repository.</p>
+<table>
+<thead>
+<tr>
+<th>Database</th>
+<th>Tables and responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boards.sqlite3</code></td>
+<td><code>boards</code> stores owner/title/revisions and JSON <code>nodes</code>/<code>view</code>; <code>changes</code> stores actual diffs; <code>undo_stack</code> stores node snapshots; <code>requests</code> stores request fingerprints and replay receipts</td>
+</tr>
+<tr>
+<td><code>auth.sqlite3</code></td>
+<td>ChatLogin session digests, principal, expiry and CSRF secret</td>
+</tr>
+<tr>
+<td><code>web.sqlite3</code></td>
+<td><code>login_failures</code>, <code>conversations</code>, <code>messages</code>, <code>chat_requests</code>, <code>proposals</code>, <code>board_deletions</code>, and owner/board-scoped <code>presentations</code></td>
+</tr>
+</tbody>
+</table>
+<p>Directories are private and database files use mode 0600. Web state uses SQLite WAL, so sidecar files may exist. Since 0.1.5, browser sessions are issued by the shared ChatLogin core and stored in <code>auth.sqlite3</code>; only SHA256 token digests cross the store boundary, never plaintext tokens. The principal owner remains the configured login email and is bound to the current configured email/password, so credential rotation rejects older sessions. Legacy Todo sessions in <code>web.sqlite3.sessions</code> are not migrated; users sign in once again and business data is not migrated or deleted. Conversation messages may contain private user content even though application API keys are not stored there.</p>
+<p>Model request state advances through <code>pending → generated → done/failed</code>. Generation is saved before domain edits to avoid another model call during recovery. Model calls use stateless Responses with per-board local history. Message reads return the latest 200 messages; this is not a physical retention guarantee. Domain audit/request receipts use a bounded window (currently 1000); undo snapshots are separate. Idempotency is not a permanent external deduplication ledger.</p>
+<p>Deletion is coordinated across two databases rather than a cross-database transaction. A known committed board deletion with failed conversation cleanup returns <code>board_deleted=true, cleanup_pending=true</code>; explicitly repeating the board deletion provides bounded cleanup recovery.</p>
+<p>If imported layout persistence fails, the service compensates by removing the new board. <code>import_storage_error</code> means rollback completed; <code>import_rollback_pending</code> requires checking the rollback outcome, while <code>import_cleanup_pending</code> means only associated Web state needs cleanup. Pending errors identify the board for an explicit DELETE recovery, not another import. A concurrent semantic edit is never force-deleted to make rollback appear successful.</p>
+<h2 id="model">Model<a class="headerlink" href="#model" title="Permanent link">&para;</a></h2>
+<p>A Board contains <code>id, title, revision, nodes, view, view_revision, updated_at</code>. A Node contains:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span><span class="nt">"id"</span><span class="p">:</span><span class="s2">"goal"</span><span class="p">,</span><span class="nt">"parent_id"</span><span class="p">:</span><span class="kc">null</span><span class="p">,</span><span class="nt">"title"</span><span class="p">:</span><span class="s2">"Research directions"</span><span class="p">,</span><span class="nt">"status"</span><span class="p">:</span><span class="s2">"pending"</span><span class="p">,</span><span class="nt">"body"</span><span class="p">:</span><span class="s2">""</span><span class="p">,</span><span class="nt">"order"</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
+</code></pre></div>
+<p>Roots have null parents; multiple roots are supported. Use <code>(board_id,node_id)</code> as the full node locator. Status is <code>pending/in_progress/completed/cancelled</code>. Titles are non-empty and at most 200 characters; Markdown bodies are optional and at most 128 KiB. Limits: 2000 nodes, 64 levels, 50 operations per batch. Unknown fields, duplicate IDs, orphans and cycles are rejected.</p>
+<p>View shape is <code>{pan:{x,y},zoom,positions:{node_id:{x,y}},collapsed:[node_id]}</code>. Coordinates are not parent relationships. Blank-canvas panning and pinch gestures change only the view, with zoom bounded to 0.2–2.5; dragging a node to reparent/reorder it submits semantic <code>move</code> operations. Invalid or stale node references are filtered.</p>
+<p><code>revision</code> tracks semantic edits; no-ops return <code>change=null</code> without incrementing it. <code>view_revision</code> is an independent compare-and-swap version. A stale view save returns 409 rather than overwriting another tab.</p>
+<p>SimpleMindMap layout preferences belong to ChatSite's <code>presentations</code> table, not the ChatTodo domain schema. They have their own <code>revision</code> and do not advance either domain version. The default is <code>logicalStructure</code>; supported alternatives are <code>mindMap</code>, <code>organizationStructure</code>, <code>catalogOrganization</code>, <code>timeline</code>, and <code>fishbone</code>.</p>
+<p><code>request_id</code> binds the exact original input. Explicit recovery repeats the same ID and same body; do not mint a new ID after an ambiguous network failure. Only a verified conflict followed by deliberate reapplication should become a new attempt.</p>
+<h2 id="integration-choices">Integration choices<a class="headerlink" href="#integration-choices" title="Permanent link">&para;</a></h2>
+<p>Use <code>chattodo.board.BoardStore</code> inside trusted backend code. Derive <code>owner</code> from verified identity; the current Web service uses the authenticated login email. Core methods are <code>create</code>, <code>list</code>, <code>get</code>, <code>mutate</code>, <code>save_view(..., view_revision=...)</code>, <code>history</code>, <code>undo</code>, and <code>delete(..., confirm=True)</code>. <code>BoardError</code> exposes <code>code/message/status</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">chattodo.board</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoardStore</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="n">store</span> <span class="o">=</span> <span class="n">BoardStore</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">"&lt;private-data-dir&gt;"</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"boards.sqlite3"</span><span class="p">)</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">owner</span> <span class="o">=</span> <span class="s2">"user@example.invalid"</span>  <span class="c1"># use verified identity</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="n">board</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Project overview"</span><span class="p">)</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="n">root</span> <span class="o">=</span> <span class="n">board</span><span class="p">[</span><span class="s2">"nodes"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">"id"</span><span class="p">]</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="n">result</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span><span class="n">board</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">owner</span><span class="p">,</span> <span class="n">board</span><span class="p">[</span><span class="s2">"revision"</span><span class="p">],</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">,</span> <span class="p">[</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="p">{</span><span class="s2">"op"</span><span class="p">:</span> <span class="s2">"create"</span><span class="p">,</span> <span class="s2">"node"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">,</span> <span class="s2">"parent_id"</span><span class="p">:</span> <span class="n">root</span><span class="p">,</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>     <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"One direction"</span><span class="p">,</span> <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"pending"</span><span class="p">,</span> <span class="s2">"body"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"order"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}}</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="p">])</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="n">current</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">board</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">owner</span><span class="p">)</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="n">current</span><span class="p">[</span><span class="s2">"view"</span><span class="p">][</span><span class="s2">"pan"</span><span class="p">][</span><span class="s2">"x"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">24</span>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="n">store</span><span class="o">.</span><span class="n">save_view</span><span class="p">(</span><span class="n">current</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">owner</span><span class="p">,</span> <span class="n">current</span><span class="p">[</span><span class="s2">"view"</span><span class="p">],</span>
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>                <span class="n">view_revision</span><span class="o">=</span><span class="n">current</span><span class="p">[</span><span class="s2">"view_revision"</span><span class="p">])</span>
+</code></pre></div>
+<p>Domain-only deletion does not clean ChatSite conversations. Prefer the coordinated HTTP delete path for a Web-managed board.</p>
+<p>HTTP clients authenticate through the shared <code>/login</code> page or <code>/api/login</code>, retain its HttpOnly session cookie, obtain CSRF from login or <code>/api/session</code>, and include <code>X-CSRF-Token</code> on writes. <code>/api/login</code> remains compatible with <code>{email,password}</code> and also accepts <code>{username,password}</code>. Browser origins must be allowed and must not be duplicated.</p>
+<table>
+<thead>
+<tr>
+<th>API</th>
+<th>Contract</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET/POST /api/boards</code></td>
+<td>List boards / create <code>{title}</code></td>
+</tr>
+<tr>
+<td><code>GET/PATCH /api/boards/{id}</code></td>
+<td>Read / mutate <code>{revision,request_id,operations,confirm_destructive}</code></td>
+</tr>
+<tr>
+<td><code>PATCH /api/boards/{id}/view</code></td>
+<td><code>{view,view_revision}</code></td>
+</tr>
+<tr>
+<td><code>GET/PATCH /api/boards/{id}/presentation</code></td>
+<td><code>{layout,revision}</code>; stale saves return 409</td>
+</tr>
+<tr>
+<td><code>POST /api/boards/{id}/undo</code></td>
+<td><code>{revision,request_id}</code></td>
+</tr>
+<tr>
+<td><code>GET /api/boards/{id}/history</code></td>
+<td><code>{changes}</code></td>
+</tr>
+<tr>
+<td><code>GET /api/boards/{id}/export</code></td>
+<td>Board JSON with optional Web <code>presentation</code></td>
+</tr>
+<tr>
+<td><code>POST /api/import</code></td>
+<td><code>{board}</code> imported as a new board, optionally restoring <code>presentation.layout</code>; legacy JSON remains supported</td>
+</tr>
+<tr>
+<td><code>DELETE /api/boards/{id}</code></td>
+<td><code>{revision,confirm:true}</code> and committed/cleanup outcome</td>
+</tr>
+<tr>
+<td><code>GET /api/boards/{id}/messages</code></td>
+<td>Conversation ID and messages</td>
+</tr>
+<tr>
+<td><code>POST /api/boards/{id}/chat</code></td>
+<td><code>{message,selected_node_id,revision,request_id}</code></td>
+</tr>
+<tr>
+<td><code>POST /api/boards/{id}/apply</code></td>
+<td><code>{proposal_id,revision,request_id,confirm_destructive:true}</code></td>
+</tr>
+</tbody>
+</table>
+<p>Operations are <code>create/node</code>, <code>update/id/fields</code>, <code>move/id/parent_id/order</code> and <code>delete/id</code>. Delete includes descendants and requires confirmation. Model deletion/moves/completion/cancellation are proposals requiring user confirmation. The model cannot choose an owner, another board, or arbitrary executable tools.</p>
+<p>Errors use <code>{"error":{"code":"...","message":"..."}}</code>. Distinguish 401 auth, 403 CSRF/origin, 409 version/request identity and 429 provider limits. A provider error is not a successful generated result.</p>
+<h2 id="backup-and-evolution">Backup and evolution<a class="headerlink" href="#backup-and-evolution" title="Permanent link">&para;</a></h2>
+<p>For a complete backup of tasks, sessions and conversations, include <code>boards.sqlite3</code>, <code>web.sqlite3</code>, <code>auth.sqlite3</code> and required private configuration. Use SQLite backup APIs for online files; copying only the main WAL database file is unsafe. For a cross-database consistent snapshot, pause writes through the supervisor, back up the databases, then resume.</p>
+<p>Board JSON is an interchange format, not a complete backup of messages, receipts or undo history. Application credentials are excluded, but any sensitive content manually entered in node Markdown remains part of its content.</p>
+<p>DDL currently lives in the Python modules; no dedicated migration CLI exists. Back up and test future structural upgrades. Deploy matched Web/domain builds and verify actual installed bytes: identical development version strings do not imply identical wheel contents.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "search.highlight", "search.share", "content.code.copy"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

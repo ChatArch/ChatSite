@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/cli-tree/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/cli-tree/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/cli-tree/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/image-workbench/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/image-workbench/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/image-workbench/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/overleaf-editor-web/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/overleaf-editor-web/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/overleaf-editor-web/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/todo-data-integration/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/todo-data-integration/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/todo-data-integration/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/todo-workbench/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/todo-workbench/"/>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/todo-workbench/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/en/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/en/cli-tree/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/cli-tree/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/cli-tree/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/en/image-workbench/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/image-workbench/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/image-workbench/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/en/overleaf-editor-web/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/overleaf-editor-web/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/overleaf-editor-web/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/en/todo-data-integration/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/todo-data-integration/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/todo-data-integration/"/>
+    </url>
+    <url>
+        <loc>https://arch.gh.wzhecnu.cn/ChatSite/en/todo-workbench/</loc>
+        <lastmod>2026-09-11</lastmod>
+        <changefreq>daily</changefreq>
+        <xhtml:link rel="alternate" hreflang="en" href="https://arch.gh.wzhecnu.cn/ChatSite/en/todo-workbench/"/>
+        <xhtml:link rel="alternate" hreflang="zh" href="https://arch.gh.wzhecnu.cn/ChatSite/todo-workbench/"/>
+    </url>
+</urlset>

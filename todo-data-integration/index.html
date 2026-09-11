@@ -1,0 +1,1069 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="ChatArch Web/service entrypoints and collaborative workbenches">
+      
+      
+      
+        <link rel="canonical" href="https://arch.gh.wzhecnu.cn/ChatSite/todo-data-integration/">
+      
+      
+        <link rel="prev" href="../image-workbench/">
+      
+      
+      
+        
+          <link rel="alternate" href="./" hreflang="zh">
+        
+          <link rel="alternate" href="../en/todo-data-integration/" hreflang="en">
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>数据存储与接入 - ChatSite 文档</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href=".." title="ChatSite 文档" class="md-header__button md-logo" aria-label="ChatSite 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ChatSite 文档
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              数据存储与接入
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+      <div class="md-header__option">
+  <div class="md-select">
+    
+    <button class="md-header__button md-icon" aria-label="选择当前语言">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12.87 15.07-2.54-2.51.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7 1.62-4.33L19.12 17z"/></svg>
+    </button>
+    <div class="md-select__inner">
+      <ul class="md-select__list">
+        
+          <li class="md-select__item">
+            <a href="./" hreflang="zh" class="md-select__link">
+              中文
+            </a>
+          </li>
+        
+          <li class="md-select__item">
+            <a href="../en/todo-data-integration/" hreflang="en" class="md-select__link">
+              English
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</div>
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="搜索" placeholder="搜索" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="查找">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="分享" aria-label="分享" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="清空当前内容" aria-label="清空当前内容" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            正在初始化搜索引擎
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/ChatArch/ChatSite" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ChatArch/ChatSite
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="ChatSite 文档" class="md-nav__button md-logo" aria-label="ChatSite 文档" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    ChatSite 文档
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/ChatArch/ChatSite" title="前往仓库" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    ChatArch/ChatSite
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    首页
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli-tree/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI 树
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overleaf-editor-web/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overleaf 编辑器
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../todo-workbench/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Todo 工作台
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../image-workbench/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    ChatImg 图像工作台
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    数据存储与接入
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    数据存储与接入
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        组件边界
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        运行目录
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="运行目录">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#boardssqlite3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        boards.sqlite3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authsqlite3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        auth.sqlite3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#websqlite3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        web.sqlite3
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        数据模型
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="数据模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        版本、回执与未知结果
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python 接入
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#http" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP 接入
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        备份与演进
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        组件边界
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        运行目录
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="运行目录">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#boardssqlite3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        boards.sqlite3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#authsqlite3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        auth.sqlite3
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#websqlite3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        web.sqlite3
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        数据模型
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="数据模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        版本、回执与未知结果
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python 接入
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#http" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP 接入
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        备份与演进
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="_1">数据存储与模块接入<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>本文描述当前实现的契约。界面中的 <strong>Canvas（画布）就是 API 中的 Board</strong>：同一账号可以有多个画布，每个画布独立保存节点、视图与对话。画布可用于项目总览，也可只放若干标题做思维风暴；<code>body</code> 留空是正常状态。</p>
+<h2 id="_2">组件边界<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>其他业务模块 / 浏览器
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>        │
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        ├─ 可信进程内调用 → chattodo.board.BoardStore
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>        │                    └─ boards.sqlite3
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        │
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        └─ 会话 + CSRF → ChatSite Todo HTTP API
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                             ├─ BoardStore
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                             ├─ auth.sqlite3
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>                             ├─ web.sqlite3
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>                             └─ 服务端模型适配器
+</code></pre></div>
+<ul>
+<li><strong>ChatTodo</strong>：树结构验证、原子语义操作、版本、幂等、历史、撤销与视图持久化。</li>
+<li><strong>ChatSite</strong>：登录、浏览器、HTTP、模型上下文与提案、会话／消息状态。</li>
+<li><strong>接入方</strong>：自己的项目 ID、事件、分派策略及 <code>project_id → board_id</code> 映射。不向节点塞入未定义字段，也不直接修改 SQLite。</li>
+<li>尚未提供自动 ChatAssign/ChatBoard 同步、团队成员管理、单独的 Bearer API token 或后台同步任务；不能把下述 API 当成这些能力已经实现。</li>
+</ul>
+<h2 id="_3">运行目录<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<p>默认数据根为 <code>$CHATARCH_HOME/chatsite/todo/</code>；未配置 ChatArch home 时通常为 <code>~/.chatarch/chatsite/todo/</code>。<code>CHATSITE_TODO_DATA_DIR</code> 可覆盖，最终以 <code>TodoSettings.data_dir</code> 为准。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>&lt;ChatArch home&gt;/
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  envs/ChatSiteTodo/          # ChatEnv typed profiles，包含敏感配置
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  chatsite/todo/
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    boards.sqlite3          # 领域事实与回执
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    auth.sqlite3            # ChatLogin 会话 digest 与 CSRF
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    web.sqlite3             # 登录限流、对话、模型请求与提案
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    web.sqlite3-wal          # 运行时可能存在的 SQLite WAL
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    web.sqlite3-shm
+</code></pre></div>
+<p>部署环境可以把专用 venv、静态文档及备份也放在此运行根下，但它们不是 Board 数据模型。数据库目录使用私有权限，数据库文件为 <code>0600</code>。不要把 env、token、数据库放进源码仓库、前端静态资源或临时公开分享目录。</p>
+<h3 id="boardssqlite3"><code>boards.sqlite3</code><a class="headerlink" href="#boardssqlite3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>表</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>boards</code></td>
+<td><code>id / owner / title / revision / nodes / view / view_revision / updated_at</code>；<code>nodes</code> 与 <code>view</code> 是 JSON 文本</td>
+</tr>
+<tr>
+<td><code>changes</code></td>
+<td>实际节点 diff 的计数、摘要、actor、revision 与时间</td>
+</tr>
+<tr>
+<td><code>undo_stack</code></td>
+<td>用于撤销的节点快照；不是简单地对上一次结果来回切换</td>
+</tr>
+<tr>
+<td><code>requests</code></td>
+<td><code>board_id + request_id</code>、完整请求指纹及原始回执</td>
+</tr>
+</tbody>
+</table>
+<p>每次调用独立连接并使用事务；写入校验失败不会留下部分节点变更。常规审计／请求回执有保留窗口（当前 1000）；不要把幂等回执当成永久去重账本。撤销快照与审计保留窗口分离。</p>
+<h3 id="authsqlite3"><code>auth.sqlite3</code><a class="headerlink" href="#authsqlite3" title="Permanent link">&para;</a></h3>
+<p>Todo 0.1.5 起浏览器会话由 ChatLogin 共享核心签发并保存在独立数据库。存储层只接收 session token 的 SHA256 digest、Principal、到期时间与 CSRF secret，不保存原始 token；会话有容量上限、TTL，到期或退出后失效。Principal 的 owner 仍是配置的登录邮箱，并绑定当前配置的邮箱／密码；旋转凭据后旧会话不会被重新接受。旧版 <code>web.sqlite3.sessions</code> 会话不会迁移，用户需要重新登录一次，不会迁移或删除业务数据。</p>
+<h3 id="websqlite3"><code>web.sqlite3</code><a class="headerlink" href="#websqlite3" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>表</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>login_failures</code></td>
+<td>登录限流窗口</td>
+</tr>
+<tr>
+<td><code>conversations</code></td>
+<td>按 <code>(owner, board_id)</code> 唯一的对话与非秘密响应元信息</td>
+</tr>
+<tr>
+<td><code>messages</code></td>
+<td>用户／助手内容，关联的 change／proposal；读取返回最近 200 条，不等于物理删除更早消息</td>
+</tr>
+<tr>
+<td><code>chat_requests</code></td>
+<td>请求指纹与 <code>pending / generated / done / failed</code> 状态、结果</td>
+</tr>
+<tr>
+<td><code>proposals</code></td>
+<td>高风险操作、基线版本、范围、应用状态及结果</td>
+</tr>
+<tr>
+<td><code>board_deletions</code></td>
+<td>跨两个数据库删除时的清理回执</td>
+</tr>
+<tr>
+<td><code>presentations</code></td>
+<td>按 <code>(owner, board_id)</code> 隔离的 Web 布局名称及独立 revision</td>
+</tr>
+</tbody>
+</table>
+<p>模型生成结果先写入请求状态，再应用领域变更，便于重放时避免再次调用模型。当前实现使用本地、按画布隔离的对话历史，向 Responses 发无状态请求；不会串用其他画布的响应链。</p>
+<p>删除业务数据库中的内容不是一个跨库事务。领域画布已经删除但会话清理失败时，API 返回 <code>board_deleted=true, cleanup_pending=true</code>；再次提交同一画布的明确删除请求可完成有界恢复，不应将已删除误报为“删除失败”。</p>
+<p>导入的布局写入若失败，会补偿撤回新画布。<code>import_storage_error</code> 表示已撤回；<code>import_rollback_pending</code> 表示撤回结果待核对，<code>import_cleanup_pending</code> 表示画布已撤回但关联状态还需清理。后两种错误会给出本次画布 ID，可通过明确的 DELETE 请求恢复，不要再次导入来掩盖未知结果。并发修改导致版本冲突时不会强制删除用户的新编辑。</p>
+<h2 id="_4">数据模型<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="p">{</span>
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"board-id"</span><span class="p">,</span>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"项目总览"</span><span class="p">,</span>
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">"revision"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">"nodes"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">    </span><span class="p">{</span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"goal"</span><span class="p">,</span><span class="w"> </span><span class="nt">"parent_id"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span><span class="w"> </span><span class="nt">"title"</span><span class="p">:</span><span class="w"> </span><span class="s2">"研究方向"</span><span class="p">,</span><span class="w"> </span><span class="nt">"status"</span><span class="p">:</span><span class="w"> </span><span class="s2">"pending"</span><span class="p">,</span><span class="w"> </span><span class="nt">"body"</span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w"> </span><span class="nt">"order"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">}</span>
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="p">],</span>
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="nt">"view"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="nt">"pan"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"x"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="nt">"y"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">},</span><span class="w"> </span><span class="nt">"zoom"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="nt">"positions"</span><span class="p">:</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="nt">"collapsed"</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">  </span><span class="p">},</span>
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">  </span><span class="nt">"view_revision"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">  </span><span class="nt">"updated_at"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;UTC ISO timestamp&gt;"</span>
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="p">}</span>
+</code></pre></div>
+<ul>
+<li><code>parent_id=null</code> 表示根节点，支持多个根的森林。节点标识在画布内唯一且稳定；定位时使用 <code>(board_id, node_id)</code>。</li>
+<li><code>title</code> 必须非空，最多 200 字符；<code>body</code> 是可选的 Markdown，最大 128 KiB。</li>
+<li><code>status</code>：<code>pending / in_progress / completed / cancelled</code>；<code>order</code> 为同级排序的非负整数。</li>
+<li>最多 2000 节点、64 层，每批最多 50 个领域操作。非法字段、重复 ID、孤儿、环、自引用会被拒绝。</li>
+<li>坐标不是父子关系。平移空白画布、鼠标滚轮、缩放按钮和双指手势只更新视图；拖拽节点重挂或排序会提交语义 <code>move</code> 操作。</li>
+<li><code>zoom</code> 范围为 <code>0.2–2.5</code>；坐标必须是有界有限数值。<code>positions</code>、<code>collapsed</code> 中不再存在的节点引用会被过滤。</li>
+</ul>
+<h3 id="_5">版本、回执与未知结果<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>revision</code> 只描述节点语义。真实无变化不增版本，<code>change=null</code>。</li>
+<li><code>view_revision</code> 单独描述视图。HTTP 保存必须带读取时的 <code>view_revision</code>；过期版本返回 409，不能覆盖另一窗口的新视图。</li>
+<li>SimpleMindMap 的 Web 布局偏好独立保存在 <code>presentations</code>，不属于 ChatTodo 领域 schema，也不递增任务的 <code>revision</code> 或 <code>view_revision</code>。默认 <code>logicalStructure</code>；可选 <code>mindMap</code>、<code>organizationStructure</code>、<code>catalogOrganization</code>、<code>timeline</code>、<code>fishbone</code>。布局 API 的 <code>revision</code> 仅用于该偏好的并发保护。</li>
+<li><code>request_id</code> 绑定<strong>完整原始输入</strong>。原请求重放返回回执；相同 ID 但不同请求体返回 409。</li>
+<li>连接断开不代表写入失败。先读回或显式重试<strong>相同 ID、相同原始请求体</strong>；不能自动生成新 ID 再次调用模型。</li>
+<li>只有确认是版本冲突、核对过最新状态后，才把重新应用作为新的请求。UI 保留未知写入的身份与编辑内容。</li>
+</ul>
+<h2 id="python">Python 接入<a class="headerlink" href="#python" title="Permanent link">&para;</a></h2>
+<p>适合具有可信身份与本地文件权限的后端进程；<code>owner</code> 必须来自接入方已经验证的身份，不能直接相信浏览器传入值。当前 Web 的 owner 是经过认证的站点登录邮箱。</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">chattodo.board</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoardStore</span>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">store</span> <span class="o">=</span> <span class="n">BoardStore</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">"&lt;private-data-dir&gt;"</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"boards.sqlite3"</span><span class="p">)</span>
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">owner</span> <span class="o">=</span> <span class="s2">"user@example.invalid"</span>  <span class="c1"># 从已认证身份取得</span>
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">board</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"项目总览"</span><span class="p">)</span>
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="n">root</span> <span class="o">=</span> <span class="n">board</span><span class="p">[</span><span class="s2">"nodes"</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s2">"id"</span><span class="p">]</span>
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="n">result</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">mutate</span><span class="p">(</span>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">board</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">owner</span><span class="p">,</span> <span class="n">board</span><span class="p">[</span><span class="s2">"revision"</span><span class="p">],</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">,</span>
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="p">[{</span><span class="s2">"op"</span><span class="p">:</span> <span class="s2">"create"</span><span class="p">,</span> <span class="s2">"node"</span><span class="p">:</span> <span class="p">{</span>
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>        <span class="s2">"id"</span><span class="p">:</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">,</span> <span class="s2">"parent_id"</span><span class="p">:</span> <span class="n">root</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"一个方向"</span><span class="p">,</span>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>        <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"pending"</span><span class="p">,</span> <span class="s2">"body"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"order"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="p">}}],</span>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="n">actor</span><span class="o">=</span><span class="s2">"user"</span><span class="p">,</span>
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="p">)</span>
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="n">current</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">board</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">owner</span><span class="p">)</span>
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="n">current</span><span class="p">[</span><span class="s2">"view"</span><span class="p">][</span><span class="s2">"pan"</span><span class="p">][</span><span class="s2">"x"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">24</span>
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="n">store</span><span class="o">.</span><span class="n">save_view</span><span class="p">(</span>
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>    <span class="n">current</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">owner</span><span class="p">,</span> <span class="n">current</span><span class="p">[</span><span class="s2">"view"</span><span class="p">],</span>
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>    <span class="n">view_revision</span><span class="o">=</span><span class="n">current</span><span class="p">[</span><span class="s2">"view_revision"</span><span class="p">],</span>
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="p">)</span>
+</code></pre></div>
+<p>其他方法：<code>list(owner)</code>、<code>history(board_id, owner)</code>、<code>undo(board_id, owner, revision, request_id)</code>、<code>delete(board_id, owner, revision, confirm=True)</code>。错误为 <code>BoardError</code>，提供 <code>code / message / status</code>。</p>
+<p>纯 <code>BoardStore.delete</code> 不负责 ChatSite 会话清理。删除 Web 使用过的画布，优先通过 HTTP 删除流程，或显式采用 ChatSite 的清理协调逻辑。不要让两个模块分别删除一半后把结果说成完整成功。</p>
+<h2 id="http">HTTP 接入<a class="headerlink" href="#http" title="Permanent link">&para;</a></h2>
+<p>所有业务接口同源、会话认证。先通过共享 <code>/login</code> 页面或 <code>POST /api/login</code> 登录，复用返回的 HttpOnly session cookie；<code>/api/login</code> 保持 <code>{email,password}</code> 兼容，也接受 <code>{username,password}</code>。从登录结果或 <code>GET /api/session</code> 取得 CSRF token。写入发送 <code>X-CSRF-Token</code>，浏览器 Origin 必须被允许且不能重复。没有凭据的第三方不能直接调用。</p>
+<table>
+<thead>
+<tr>
+<th>方法与路径</th>
+<th>输入／输出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GET /api/boards</code></td>
+<td>当前 owner 的画布摘要列表</td>
+</tr>
+<tr>
+<td><code>POST /api/boards</code></td>
+<td><code>{title}</code> → <code>{board}</code>，自动有一个空正文主节点</td>
+</tr>
+<tr>
+<td><code>GET /api/boards/{id}</code></td>
+<td><code>{board}</code>；不存在或跨 owner 都返回 404</td>
+</tr>
+<tr>
+<td><code>PATCH /api/boards/{id}</code></td>
+<td><code>{revision, request_id, operations, confirm_destructive}</code> → <code>{board, change}</code></td>
+</tr>
+<tr>
+<td><code>PATCH /api/boards/{id}/view</code></td>
+<td><code>{view, view_revision}</code> → <code>{view, view_revision}</code></td>
+</tr>
+<tr>
+<td><code>GET /api/boards/{id}/presentation</code></td>
+<td><code>{layout, revision}</code></td>
+</tr>
+<tr>
+<td><code>PATCH /api/boards/{id}/presentation</code></td>
+<td><code>{layout, revision}</code> → 当前布局偏好；版本过期返回 409</td>
+</tr>
+<tr>
+<td><code>POST /api/boards/{id}/undo</code></td>
+<td><code>{revision, request_id}</code> → <code>{board, change}</code></td>
+</tr>
+<tr>
+<td><code>GET /api/boards/{id}/history</code></td>
+<td><code>{changes}</code></td>
+</tr>
+<tr>
+<td><code>GET /api/boards/{id}/export</code></td>
+<td>画布 JSON，包含可选 Web <code>presentation</code>，不含应用登录／模型配置</td>
+</tr>
+<tr>
+<td><code>POST /api/import</code></td>
+<td><code>{board}</code> → 新画布；可恢复 <code>presentation.layout</code>，不覆盖已有画布；旧 JSON 仍可导入</td>
+</tr>
+<tr>
+<td><code>DELETE /api/boards/{id}</code></td>
+<td><code>{revision, confirm:true}</code> → 删除／清理状态</td>
+</tr>
+<tr>
+<td><code>GET /api/boards/{id}/messages</code></td>
+<td>对话 ID 与消息列表</td>
+</tr>
+<tr>
+<td><code>POST /api/boards/{id}/chat</code></td>
+<td><code>{message, selected_node_id, revision, request_id}</code> → 助手消息、画布、change／proposal</td>
+</tr>
+<tr>
+<td><code>POST /api/boards/{id}/apply</code></td>
+<td><code>{proposal_id, revision, request_id, confirm_destructive:true}</code> → 已确认结果</td>
+</tr>
+</tbody>
+</table>
+<p>错误统一为 <code>{"error":{"code":"...","message":"..."}}</code>。常见：401 未登录，403 CSRF／Origin，409 版本／请求身份冲突，429 模型忙或上游限流。不能用 HTTP 200 的 HTML 登录页冒充 JSON 成功结果。</p>
+<p>领域操作形状：</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="p">[</span>
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="p">{</span><span class="nt">"op"</span><span class="p">:</span><span class="s2">"create"</span><span class="p">,</span><span class="nt">"node"</span><span class="p">:{</span><span class="nt">"id"</span><span class="p">:</span><span class="s2">"new-id"</span><span class="p">,</span><span class="nt">"parent_id"</span><span class="p">:</span><span class="s2">"goal"</span><span class="p">,</span><span class="nt">"title"</span><span class="p">:</span><span class="s2">"新想法"</span><span class="p">,</span><span class="nt">"body"</span><span class="p">:</span><span class="s2">""</span><span class="p">,</span><span class="nt">"status"</span><span class="p">:</span><span class="s2">"pending"</span><span class="p">,</span><span class="nt">"order"</span><span class="p">:</span><span class="mi">0</span><span class="p">}},</span>
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="p">{</span><span class="nt">"op"</span><span class="p">:</span><span class="s2">"update"</span><span class="p">,</span><span class="nt">"id"</span><span class="p">:</span><span class="s2">"new-id"</span><span class="p">,</span><span class="nt">"fields"</span><span class="p">:{</span><span class="nt">"title"</span><span class="p">:</span><span class="s2">"新的标题"</span><span class="p">}},</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span><span class="p">{</span><span class="nt">"op"</span><span class="p">:</span><span class="s2">"move"</span><span class="p">,</span><span class="nt">"id"</span><span class="p">:</span><span class="s2">"new-id"</span><span class="p">,</span><span class="nt">"parent_id"</span><span class="p">:</span><span class="kc">null</span><span class="p">,</span><span class="nt">"order"</span><span class="p">:</span><span class="mi">1</span><span class="p">},</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="p">{</span><span class="nt">"op"</span><span class="p">:</span><span class="s2">"delete"</span><span class="p">,</span><span class="nt">"id"</span><span class="p">:</span><span class="s2">"new-id"</span><span class="p">}</span>
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="p">]</span>
+</code></pre></div>
+<p>删除会包含后代并要求确认。模型的删除、移动、完成／取消等重要操作先形成提案；模型不能决定 owner、切换别的画布或执行任意代码。</p>
+<h2 id="_6">备份与演进<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h2>
+<ul>
+<li>需要保留完整任务、会话与对话时，备份 <code>boards.sqlite3</code>、<code>web.sqlite3</code>、<code>auth.sqlite3</code> 及必要的私有 ChatEnv 配置；不要把备份公开。</li>
+<li>对在线 SQLite 使用 SQLite backup API，不能只复制主文件而忽略 WAL。要获得跨库一致的完整快照，先通过 supervisor 暂停本服务写入，完成上述数据库备份再恢复。</li>
+<li>JSON 导出用于交换一个画布的节点与视图，不包含完整会话、幂等账本或所有撤销状态。正文按原样导出：用户自行写入的敏感内容不会自动消失。</li>
+<li>当前 DDL 随 Python 模块维护，没有独立 schema-migration CLI；结构升级应先备份并测试迁移。</li>
+<li>Web 与领域包必须成对更新并核对真实安装代码；相同开发版本号并不能证明 wheel 内容相同。</li>
+<li>接入方优先复用上述 Python API 或 HTTP；后续增加事件同步、任务分派、常规树视图时，不应重建一套相互分离的节点事实。</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.sections", "navigation.indexes", "navigation.top", "search.highlight", "search.share", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "\u5df2\u590d\u5236", "clipboard.copy": "\u590d\u5236", "search.result.more.one": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.more.other": "\u5728\u8be5\u9875\u4e0a\u8fd8\u6709 # \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.none": "\u6ca1\u6709\u627e\u5230\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.one": "\u627e\u5230 1 \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.other": "# \u4e2a\u7b26\u5408\u6761\u4ef6\u7684\u7ed3\u679c", "search.result.placeholder": "\u952e\u5165\u4ee5\u5f00\u59cb\u641c\u7d22", "search.result.term.missing": "\u7f3a\u5c11", "select.version": "\u9009\u62e9\u5f53\u524d\u7248\u672c"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
