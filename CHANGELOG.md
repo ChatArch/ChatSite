@@ -1,10 +1,10 @@
-# 0.1.6
+# Changelog
+
+## 2026-10-21 - 0.1.6
 
 - Add reusable private static sites with ChatLogin managed accounts, explicit site grants, a hosting console and closed public registration.
 - Add CLI login, development upload, reviewed production publication, immutable versions and rollback; no CI setup is required.
 - Preserve original Hub accounts and routes; optional short aliases resolve the same production release. Bound archives, validate every resource request, and isolate site scripts by default.
-
-# Changelog
 
 ## 2026-09-11 - 0.1.5
 
