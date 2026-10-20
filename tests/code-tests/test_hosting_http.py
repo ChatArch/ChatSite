@@ -111,6 +111,18 @@ def test_real_http_cli_workflow_nested_mime_and_security(tmp_path, monkeypatch):
         assert fetch('/api/hosting/sites', data=b'{}', headers=cookie_headers)[0] == 403
         cookie_headers['Origin'] = origin
         assert fetch('/api/hosting/sites', data=b'{}', headers=cookie_headers)[0] == 400
+        # A fallback native owner session must also be revoked by hosting logout.
+        code, headers, raw = fetch('/api/login', data=json.dumps({'email': record.username, 'password': 'owner-password'}).encode(), headers={'Content-Type': 'application/json', 'Origin': origin})
+        assert code == 200
+        native_cookie = headers['Set-Cookie'].split(';', 1)[0]
+        native_csrf = json.loads(raw)['csrf_token']
+        assert fetch('/api/hosting/session', headers={'Cookie': native_cookie})[0] == 200
+        code, headers, _ = fetch('/api/hosting/logout', data=b'{}', headers={'Cookie': native_cookie, 'Origin': origin, 'Content-Type': 'application/json', 'X-CSRF-Token': native_csrf})
+        assert code == 200 and headers['Set-Cookie'].startswith('chatsite_session=')
+        assert fetch('/api/session', headers={'Cookie': native_cookie})[0] == 401
+        assert fetch('/api/hosting/session', headers={'Cookie': native_cookie})[0] == 401
+        assert fetch('/notes/', headers={'Cookie': native_cookie})[0] == 303
+        assert fetch('/hosting/', headers={'Cookie': native_cookie})[0] == 303
         cli('grant', 'second', '--user-id', user['user_id'], '--role', 'none')
         assert fetch('/sites/second/prod/', headers=bearer)[0] == 403
         cli('users', 'disable', user['user_id'])

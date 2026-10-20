@@ -189,7 +189,11 @@ def decorate_handler(native_handler, app):
                     token = self.headers.get('Authorization', '').removeprefix('Bearer ') or self._hosting_cookie()
                     if token:
                         app.users.sessions.revoke(token)
-                    return self._hosting_bytes(200, b'{"ok":true}', 'application/json', extra={'Set-Cookie': COOKIE + '=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax'})
+                        expired = COOKIE + '=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax'
+                    else:
+                        self.auth.logout(self._session_token(), self.headers.get('X-CSRF-Token'))
+                        expired = self._expired_session_cookie()
+                    return self._hosting_bytes(200, b'{"ok":true}', 'application/json', extra={'Set-Cookie': expired})
                 if path == '/api/hosting/users':
                     app.store.admin(actor)
                     if method == 'GET':
