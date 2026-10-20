@@ -78,13 +78,16 @@ def decorate_handler(native_handler, app):
             value = cookie.get(COOKIE)
             return value.value if value else None
 
+        def _hosting_require_origin(self):
+            origins = self.headers.get_all('Origin', [])
+            if len(origins) != 1 or origins[0].rstrip('/') not in self.config.allowed_origins:
+                raise AccessDenied(403, 'A permitted Origin is required for cookie writes')
+
         def _hosting_auth(self, *, write=False):
             authorization = self.headers.get('Authorization', '')
             bearer = authorization.startswith('Bearer ')
             if write and not bearer:
-                origins = self.headers.get_all('Origin', [])
-                if len(origins) != 1 or origins[0].rstrip('/') not in self.config.allowed_origins:
-                    raise AccessDenied(403, 'A permitted Origin is required for cookie writes')
+                self._hosting_require_origin()
             token = authorization[7:] if bearer else self._hosting_cookie()
             if token:
                 session = app.users.sessions.resolve(token)
@@ -122,6 +125,8 @@ def decorate_handler(native_handler, app):
             return self._hosting_bytes(303, b'', 'text/plain', extra={'Location': url})
 
         def _hosting_login(self):
+            if self.headers.get('X-ChatSite-Client') != 'cli':
+                self._hosting_require_origin()
             payload = self._read_json()
             username = payload.get('username', payload.get('email'))
             password = payload.get('password')

@@ -77,7 +77,7 @@ def test_permissions_are_live_and_revocable(setup):
         store.upload(outsider, 'demo', archive('bad'))
 
 
-@pytest.mark.parametrize('name', ['../outside', '/etc/passwd', 'assets/../../bad', 'a\\b', '.env', '.git/config', '.hg/store/data', '.svn/wc.db'])
+@pytest.mark.parametrize('name', ['../outside', '/etc/passwd', 'assets/../../bad', 'a\\b', '.env', '.git/config', '.hg/store/data', '.svn/wc.db', '.bzr/repository/data', '_darcs/hashed_inventory', 'CVS/Entries', '.jj/repo/store', '.GIT/config'])
 def test_archive_and_path_boundary(setup, name):
     store, owner, *_ = setup
     store.create_site(owner, 'demo', 'Demo')

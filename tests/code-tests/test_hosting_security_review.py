@@ -14,7 +14,7 @@ from chatsite.hosting_web import HostingApp, decorate_handler
 from chatsite.web import AppConfig, DataStore, make_handler
 
 
-@pytest.mark.parametrize('metadata', ['.hg/store/data', '.svn/wc.db'])
+@pytest.mark.parametrize('metadata', ['.hg/store/data', '.svn/wc.db', '.bzr/repository/data', '_darcs/hashed_inventory', 'CVS/Entries', '.jj/repo/store', '.GIT/config'])
 def test_client_archive_rejects_repository_metadata(tmp_path, metadata):
     (tmp_path / 'index.html').write_text('hello')
     target = tmp_path / metadata
@@ -56,6 +56,9 @@ def test_cookie_writes_require_origin_but_bearer_clients_do_not(tmp_path, monkey
 
     try:
         credentials = {'username': record.username, 'password': 'owner-password'}
+        for missing_origin in [{}, {'Origin': ''}, {'Origin': 'null'}]:
+            code, _, _ = post('/api/hosting/login', credentials, missing_origin)
+            assert code == 403
         code, headers, body = post('/api/hosting/login', credentials, {'Origin': origin})
         assert code == 200
         cookie = headers['Set-Cookie'].split(';', 1)[0]

@@ -13,6 +13,10 @@ MAX_EXPANDED = 64 * 1024 * 1024
 MAX_FILES = 2000
 SLUG = re.compile(r'[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?\Z')
 RESERVED = {'api', 'hosting', 'sites', 'login', 'logout', 'static', 'health', 'overleaf', 'labs'}
+SOURCE_CONTROL_METADATA = frozenset({
+    '.git', '.hg', '.svn', '.bzr', '_darcs', '.darcs', 'cvs', 'rcs', 'sccs',
+    '.jj', '.pijul', '.fossil', '.fslckout', '_fossil_', '.arch-ids', '{arch}',
+})
 
 
 class HostingError(Exception):
@@ -34,7 +38,7 @@ def safe_path(name):
     path = PurePosixPath(name)
     if path.is_absolute() or any(p in {'', '.', '..'} for p in name.split('/')):
         raise HostingError(400, 'Invalid static path')
-    if any(p in {'.git', '.hg', '.svn'} or p == '.env' or p.startswith('.env.') for p in path.parts):
+    if any(p.casefold() in SOURCE_CONTROL_METADATA or p == '.env' or p.startswith('.env.') for p in path.parts):
         raise HostingError(400, 'Source-control and secret files cannot be uploaded')
     return path
 
