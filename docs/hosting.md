@@ -53,7 +53,7 @@ chatsite hosting bootstrap --username owner@example.test --password-env EXISTING
 
 ## 隔离与边界
 
-每份 HTML、CSS、JavaScript 和数据文件都检查当前账号及站点授权。版本目录不可变，上传只更新数据库中的开发版指针，发布事务只切换正式版指针；旧版本保留供回退。归档限制为压缩32 MiB、展开64 MiB、2000项；拒绝越界、符号链接、`.env`、`.git`、重复条目和加密归档。每站最多200个版本，达到上限需管理员安排归档，系统不会自动删除旧版本。
+每份 HTML、CSS、JavaScript 和数据文件都检查当前账号及站点授权。版本目录不可变，上传只更新数据库中的开发版指针，发布事务只切换正式版指针；旧版本保留供回退。归档限制为压缩32 MiB、展开64 MiB、2000项；拒绝越界、符号链接、`.env`、`.git` / `.hg` / `.svn` 元数据、重复条目和加密归档。每站最多200个版本，达到上限需管理员安排归档，系统不会自动删除旧版本。
 
 默认站点响应使用 CSP sandbox，使页面脚本不能获得管理站点的同源权限。浏览器存储及基于同源 fetch 的扩展在该模式下受限。管理员只可对完全可信的代码和发布者选择 `--trusted`，以启用本地存储、同源留言等扩展；这些脚本与管理入口共享权限边界，授予该站发布权限就意味着信任其代码。所有站点禁止注册 Service Worker。[CSP sandbox 的浏览器语义](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/sandbox)。
 

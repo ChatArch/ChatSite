@@ -81,6 +81,10 @@ def decorate_handler(native_handler, app):
         def _hosting_auth(self, *, write=False):
             authorization = self.headers.get('Authorization', '')
             bearer = authorization.startswith('Bearer ')
+            if write and not bearer:
+                origins = self.headers.get_all('Origin', [])
+                if len(origins) != 1 or origins[0].rstrip('/') not in self.config.allowed_origins:
+                    raise AccessDenied(403, 'A permitted Origin is required for cookie writes')
             token = authorization[7:] if bearer else self._hosting_cookie()
             if token:
                 session = app.users.sessions.resolve(token)

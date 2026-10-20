@@ -34,7 +34,7 @@ def safe_path(name):
     path = PurePosixPath(name)
     if path.is_absolute() or any(p in {'', '.', '..'} for p in name.split('/')):
         raise HostingError(400, 'Invalid static path')
-    if any(p == '.git' or p == '.env' or p.startswith('.env.') for p in path.parts):
+    if any(p in {'.git', '.hg', '.svn'} or p == '.env' or p.startswith('.env.') for p in path.parts):
         raise HostingError(400, 'Source-control and secret files cannot be uploaded')
     return path
 
@@ -62,5 +62,3 @@ def make_archive(directory: Path) -> bytes:
     if len(data) > MAX_ARCHIVE:
         raise HostingError(413, 'Archive exceeds the upload limit')
     return data
-
-
