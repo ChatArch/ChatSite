@@ -23,6 +23,15 @@ class ChatsiteConfig(BaseEnvConfig):
         is_sensitive=True,
     )
 
+    CHATSITE_HOSTING_ENABLED = EnvField(
+        "CHATSITE_HOSTING_ENABLED", default="false",
+        desc="Enable managed private static hosting in the Hub server",
+    )
+    CHATSITE_HOSTING_DATA_DIR = EnvField(
+        "CHATSITE_HOSTING_DATA_DIR",
+        desc="Optional hosting data directory; defaults to the Hub data directory / hosting",
+    )
+
 
 from chatsite.image_config import ImageWebConfig
 

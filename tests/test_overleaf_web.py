@@ -14,8 +14,8 @@ def test_overleaf_web_is_a_chatsite_feature_entrypoint():
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 
     assert 'chatsite-web = "chatsite.web:main"' in pyproject
-    assert 'overleaf = ["ChatOL>=0.1.2,<0.2.0", "ChatLogin[ui]>=0.1.3,<0.2.0"]' in pyproject
-    assert 'todo = ["ChatTodo>=0.1.0,<0.2.0", "ChatLogin[web]>=0.1.2,<0.2.0"' in pyproject
+    assert 'overleaf = ["ChatOL>=0.1.2,<0.2.0", "ChatLogin[ui]>=0.1.3,<0.3.0"]' in pyproject
+    assert 'todo = ["ChatTodo>=0.1.0,<0.2.0", "ChatLogin[web]>=0.1.2,<0.3.0"' in pyproject
     assert '[tool.setuptools.package-data]' in pyproject
     assert '"web_static/*"' in pyproject
 

@@ -41,6 +41,7 @@ plugins:
             Todo 工作台: Todo Workbench
             ChatImg 图像工作台: ChatImg Image Workbench
             数据存储与接入: Data and Integration
+            静态网站托管: Private Static Hosting
 
 markdown_extensions:
   - admonition
@@ -72,3 +73,4 @@ nav:
   - Todo 工作台: todo-workbench.md
   - ChatImg 图像工作台: image-workbench.md
   - 数据存储与接入: todo-data-integration.md
+  - 静态网站托管: hosting.md

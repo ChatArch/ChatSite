@@ -91,5 +91,8 @@ def check_image(profile, home):
     click.echo(f"ChatSite Image 配置已加载：{cfg.public_url}")
 
 
+from .hosting_cli import hosting
+main.add_command(hosting)
+
 if __name__ == "__main__":
     main()

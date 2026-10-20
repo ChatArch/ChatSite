@@ -135,7 +135,8 @@ class DataStore:
     def __init__(self, config: AppConfig) -> None:
         self.config = config
         self.db_path = config.data_dir / "chatsite.sqlite3"
-        config.data_dir.mkdir(parents=True, exist_ok=True)
+        config.data_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+        config.data_dir.chmod(0o700)
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.init()
@@ -1123,6 +1124,9 @@ def make_handler(config: AppConfig, store: DataStore, *, login_ui: LoginUI | Non
     ConfiguredChatOLWebHandler.config = config
     ConfiguredChatOLWebHandler.store = store
     ConfiguredChatOLWebHandler.auth = auth
+    if os.getenv('CHATSITE_HOSTING_ENABLED', '').lower() in {'1', 'true', 'yes'}:
+        from .hosting_web import HostingApp, decorate_handler
+        return decorate_handler(ConfiguredChatOLWebHandler, HostingApp.from_hub(config))
     return ConfiguredChatOLWebHandler
 
 
