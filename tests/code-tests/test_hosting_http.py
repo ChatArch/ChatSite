@@ -102,6 +102,10 @@ def test_real_http_cli_workflow_nested_mime_and_security(tmp_path, monkeypatch):
         # A cookie login must supply CSRF and a permitted Origin for writes.
         code, headers, raw = fetch('/api/hosting/login', data=json.dumps({'username': record.username, 'password': 'owner-password'}).encode(), headers={'Content-Type': 'application/json', 'Origin': origin})
         assert code == 200
+        issued_cookies = headers.get_all('Set-Cookie')
+        assert len(issued_cookies) == 2
+        combined_cookie = '; '.join(c.split(';', 1)[0] for c in issued_cookies)
+        assert fetch('/api/session', headers={'Cookie': combined_cookie})[0] == 200
         cookie = headers['Set-Cookie'].split(';', 1)[0]
         csrf = json.loads(raw)['csrf_token']
         cookie_headers = {'Cookie': cookie, 'Origin': origin, 'Content-Type': 'application/json'}
@@ -111,6 +115,15 @@ def test_real_http_cli_workflow_nested_mime_and_security(tmp_path, monkeypatch):
         assert fetch('/api/hosting/sites', data=b'{}', headers=cookie_headers)[0] == 403
         cookie_headers['Origin'] = origin
         assert fetch('/api/hosting/sites', data=b'{}', headers=cookie_headers)[0] == 400
+        managed_csrf = json.loads(raw)['csrf_token']
+        code, _, _ = fetch('/api/hosting/logout', data=b'{}', headers={'Cookie': combined_cookie, 'Origin': origin, 'Content-Type': 'application/json', 'X-CSRF-Token': managed_csrf})
+        assert code == 200
+        assert fetch('/api/session', headers={'Cookie': combined_cookie})[0] == 401
+        assert fetch('/api/hosting/session', headers={'Cookie': combined_cookie})[0] == 401
+        code, headers, raw_member = fetch('/api/hosting/login', data=json.dumps({'username': 'member@example.test', 'password': 'member-password'}).encode(), headers={'Content-Type': 'application/json', 'Origin': origin})
+        assert code == 200 and len(headers.get_all('Set-Cookie')) == 1
+        member_cookie = headers['Set-Cookie'].split(';', 1)[0]
+        assert fetch('/api/session', headers={'Cookie': member_cookie})[0] == 401
         # A fallback native owner session must also be revoked by hosting logout.
         code, headers, raw = fetch('/api/login', data=json.dumps({'email': record.username, 'password': 'owner-password'}).encode(), headers={'Content-Type': 'application/json', 'Origin': origin})
         assert code == 200

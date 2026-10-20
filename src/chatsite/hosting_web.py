@@ -107,7 +107,8 @@ def decorate_handler(native_handler, app):
             self.send_header('X-Content-Type-Options', 'nosniff')
             self.send_header('X-Robots-Tag', 'noindex, nofollow')
             self.send_header('Referrer-Policy', 'same-origin')
-            for key, value in (extra or {}).items():
+            pairs = extra.items() if isinstance(extra, dict) else (extra or [])
+            for key, value in pairs:
                 self.send_header(key, value)
             self.end_headers()
             if not head:
@@ -141,8 +142,18 @@ def decorate_handler(native_handler, app):
             cookie[COOKIE]['httponly'] = True
             cookie[COOKIE]['samesite'] = 'Lax'
             cookie[COOKIE]['secure'] = app.origin.startswith('https://')
+            cookies = [('Set-Cookie', cookie.output(header='').strip())]
+            # Matching original-owner credentials also establish the native Hub
+            # session needed by existing private extensions such as comments.
+            # Other managed users/admins never receive legacy Hub access.
+            if (self.headers.get('X-ChatSite-Client') != 'cli' and principal.role is Role.OWNER
+                    and username.casefold() == self.config.admin_email.casefold()
+                    and self.auth.backend.authenticate(self.config.admin_email, password) is not None):
+                _, native_token = self.auth.login({'email': self.config.admin_email, 'password': password},
+                                                  self._session_token(), None)
+                cookies.append(('Set-Cookie', self._session_cookie(native_token)))
             return self._hosting_bytes(200, json.dumps(data).encode(), 'application/json; charset=utf-8',
-                                       extra={'Set-Cookie': cookie.output(header='').strip()})
+                                       extra=cookies)
 
         def _hosting_dispatch(self, method, parsed, alias):
             path = parsed.path
@@ -189,11 +200,12 @@ def decorate_handler(native_handler, app):
                     token = self.headers.get('Authorization', '').removeprefix('Bearer ') or self._hosting_cookie()
                     if token:
                         app.users.sessions.revoke(token)
-                        expired = COOKIE + '=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax'
-                    else:
-                        self.auth.logout(self._session_token(), self.headers.get('X-CSRF-Token'))
-                        expired = self._expired_session_cookie()
-                    return self._hosting_bytes(200, b'{"ok":true}', 'application/json', extra={'Set-Cookie': expired})
+                    native_token = self._session_token()
+                    if native_token:
+                        self.auth.sessions.revoke(native_token)
+                    return self._hosting_bytes(200, b'{"ok":true}', 'application/json', extra=[
+                        ('Set-Cookie', self._expired_session_cookie()),
+                        ('Set-Cookie', COOKIE + '=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax')])
                 if path == '/api/hosting/users':
                     app.store.admin(actor)
                     if method == 'GET':

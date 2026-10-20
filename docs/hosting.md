@@ -49,7 +49,7 @@ chatsite hosting users disable USER_ID
 chatsite hosting bootstrap --username owner@example.test --password-env EXISTING_OWNER_PASSWORD
 ```
 
-使用原 Hub 的 owner 账号和密码开通托管 owner 后，原 Hub 会话也可打开管理页和有权限的站点。原 `/api/login` 仍只接受原 Hub owner；新增账号登录 `/hosting/login`，不会获得旧 Hub / Overleaf 权限。新托管 cookie 为 `chatsite_hosting_session`；CLI 使用显式 Bearer 会话。Cookie 写入同时检查 Origin 和 CSRF。
+使用原 Hub 的 owner 账号和密码开通托管 owner 后，原 Hub 会话也可打开管理页和有权限的站点。该本人从托管网页登录时还会建立原 Hub 会话，让已有留言等扩展继续可用；退出会同时撤销两种浏览器会话。只有与原 Hub 配置完全匹配的 owner 身份和密码才有这项兼容行为。原 `/api/login` 仍只接受原 Hub owner；新增账号登录 `/hosting/login`，不会获得旧 Hub / Overleaf 权限。新托管 cookie 为 `chatsite_hosting_session`；CLI 使用显式 Bearer 会话。Cookie 写入同时检查 Origin 和 CSRF。
 
 ## 隔离与边界
 
